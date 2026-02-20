@@ -54,8 +54,6 @@ export const TELEMETRY_KEYS = {
   WEATHER: 'temperature,humidity',
 
   AERATION: 'state',
-
-  SENSOR_COUNT: 'sensorCount,moistureSensors',
 } as const;
 
 // ─── Discovery Constants ─────────────────────────────────────────

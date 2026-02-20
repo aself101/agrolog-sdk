@@ -248,6 +248,9 @@ try {
 | `DISCOVERY_FAILED` | Site, weather station, or device not found |
 | `REQUEST_FAILED` | HTTP request failed after retries |
 | `SERVICE_UNAVAILABLE` | Server returned 502/503/504 |
+| `TELEMETRY_FAILED` | Telemetry request or parse failed |
+| `TIMEOUT` | Request timed out |
+| `NETWORK_ERROR` | Network-level failure (no response) |
 
 ## Telemetry Values
 
@@ -265,10 +268,13 @@ All temperature values are **raw Celsius** — no conversion is applied. If `sen
 ## Export Paths
 
 ```ts
+// Primary imports (recommended)
 import { AgrologClient, AgrologAPIError } from 'agrolog-sdk';
 import type { SiloTelemetry, WeatherTelemetry, Alarm } from 'agrolog-sdk/types';
 import { ERROR_CODES, DEFAULT_BASE_URL } from 'agrolog-sdk/config';
-import { AgrologAPIError } from 'agrolog-sdk/errors';
+
+// Alternative: import error class from its dedicated path
+// import { AgrologAPIError } from 'agrolog-sdk/errors';
 ```
 
 ## License

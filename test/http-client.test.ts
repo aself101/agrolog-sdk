@@ -119,5 +119,58 @@ describe('AgrologHttpClient', () => {
         retryClient.request('GET', '/api/data'),
       ).rejects.toThrow('Authentication failed');
     });
+
+    it('maps timeout to AgrologAPIError with TIMEOUT code', async () => {
+      const timeoutClient = new AgrologHttpClient(BASE_URL, 1, false, 0);
+      timeoutClient.setAuth(
+        async () => 'mock-token',
+        async () => {},
+      );
+
+      nock(BASE_URL).get('/api/slow').times(4).delayConnection(50).reply(200, {});
+
+      const error = await timeoutClient.request('GET', '/api/slow').catch((e: unknown) => e) as AgrologAPIError;
+      expect(error).toBeInstanceOf(AgrologAPIError);
+      expect(error.code).toBe('TIMEOUT');
+    });
+
+    it('maps network failure to AgrologAPIError with NETWORK_ERROR code', async () => {
+      nock(BASE_URL).get('/api/down').times(4).replyWithError('connection refused');
+
+      const error = await client.request('GET', '/api/down').catch((e: unknown) => e) as AgrologAPIError;
+      expect(error).toBeInstanceOf(AgrologAPIError);
+      expect(error.code).toBe('NETWORK_ERROR');
+    });
+  });
+
+  describe('AgrologAPIError', () => {
+    it('isRetryable returns true for 502/503/504', () => {
+      expect(new AgrologAPIError('msg', 'CODE', 502).isRetryable()).toBe(true);
+      expect(new AgrologAPIError('msg', 'CODE', 503).isRetryable()).toBe(true);
+      expect(new AgrologAPIError('msg', 'CODE', 504).isRetryable()).toBe(true);
+    });
+
+    it('isRetryable returns false for non-retryable status codes', () => {
+      expect(new AgrologAPIError('msg', 'CODE', 400).isRetryable()).toBe(false);
+      expect(new AgrologAPIError('msg', 'CODE', 500).isRetryable()).toBe(false);
+    });
+
+    it('isRetryable returns true for SERVICE_UNAVAILABLE code', () => {
+      expect(new AgrologAPIError('msg', 'SERVICE_UNAVAILABLE').isRetryable()).toBe(true);
+    });
+
+    it('isAuthError returns true for 401/403', () => {
+      expect(new AgrologAPIError('msg', 'CODE', 401).isAuthError()).toBe(true);
+      expect(new AgrologAPIError('msg', 'CODE', 403).isAuthError()).toBe(true);
+    });
+
+    it('isAuthError returns false for non-auth status codes', () => {
+      expect(new AgrologAPIError('msg', 'CODE', 500).isAuthError()).toBe(false);
+    });
+
+    it('isAuthError returns true for AUTH_FAILED and TOKEN_EXPIRED codes', () => {
+      expect(new AgrologAPIError('msg', 'AUTH_FAILED').isAuthError()).toBe(true);
+      expect(new AgrologAPIError('msg', 'TOKEN_EXPIRED').isAuthError()).toBe(true);
+    });
   });
 });

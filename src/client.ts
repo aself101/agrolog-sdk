@@ -64,7 +64,7 @@ export class AgrologClient {
     // Wire auth into HTTP client
     this.httpClient.setAuth(
       () => this.tokenManager.getValidToken(this.httpClient),
-      () => this.tokenManager.refreshToken(this.httpClient).then(() => undefined),
+      async () => { await this.tokenManager.refreshToken(this.httpClient); },
     );
   }
 
@@ -197,13 +197,13 @@ export class AgrologClient {
    */
   async getAllSiloTelemetry(): Promise<Map<string, SiloTelemetry>> {
     const topology = this.connectedTopology();
-    const results = new Map<string, SiloTelemetry>();
-    const promises = topology.silos.map(async silo => {
-      const telemetry = await getSiloTelemetry(this.httpClient, silo.assetId);
-      results.set(silo.assetId, telemetry);
-    });
-    await Promise.all(promises);
-    return results;
+    const entries = await Promise.all(
+      topology.silos.map(async silo => {
+        const telemetry = await getSiloTelemetry(this.httpClient, silo.assetId);
+        return [silo.assetId, telemetry] as const;
+      }),
+    );
+    return new Map(entries);
   }
 
   // ─── Auth ────────────────────────────────────────────────────

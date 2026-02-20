@@ -36,9 +36,14 @@ describe('AgrologClient', () => {
   afterAll(() => nock.enableNetConnect());
   afterEach(() => nock.cleanAll());
 
-  it('throws if no credentials provided', () => {
-    // Pass explicit empty strings to bypass any env/dotenv fallback
+  it('throws AgrologAPIError if no username provided', () => {
     expect(() => new AgrologClient({ username: '', password: '' })).toThrow('username is required');
+    expect(() => new AgrologClient({ username: '', password: '' })).toThrow(AgrologAPIError);
+  });
+
+  it('throws AgrologAPIError if no password provided', () => {
+    expect(() => new AgrologClient({ username: 'user@test.com', password: '' })).toThrow('password is required');
+    expect(() => new AgrologClient({ username: 'user@test.com', password: '' })).toThrow(AgrologAPIError);
   });
 
   describe('with credentials', () => {
@@ -58,6 +63,37 @@ describe('AgrologClient', () => {
 
     it('isConnected() returns false before connect', () => {
       expect(client.isConnected()).toBe(false);
+    });
+  });
+
+  describe('connected client without weather station', () => {
+    let client: AgrologClient;
+
+    beforeAll(async () => {
+      client = new AgrologClient({
+        username: 'test@example.com',
+        password: 'password',
+        baseUrl: BASE_URL,
+      });
+      // Login
+      nock(BASE_URL).post('/api/auth/login').reply(200, { token: 'jwt-token', refreshToken: 'r' });
+      // User
+      nock(BASE_URL).get('/api/auth/user').reply(200, {
+        customerId: { id: 'cust-1', entityType: 'CUSTOMER' },
+      });
+      // Sites
+      nock(BASE_URL).post('/api/assets').reply(200, [
+        { id: { id: 'site-1', entityType: 'ASSET' }, name: 'Site', type: 'site' },
+      ]);
+      // Site assets — silos only, no weather station
+      nock(BASE_URL).post('/api/assets').reply(200, [
+        { id: { id: 'silo-1', entityType: 'ASSET' }, name: 'Silo 1', type: 'silo' },
+      ]);
+      await client.connect();
+    });
+
+    it('getWeatherTelemetry throws when no weather station in topology', async () => {
+      await expect(client.getWeatherTelemetry()).rejects.toThrow('No weather station');
     });
   });
 
@@ -166,13 +202,21 @@ describe('AgrologClient', () => {
     });
 
     it('refreshAuth clears and re-acquires token', async () => {
-      // Mock the login endpoint for token refresh
-      nock(BASE_URL)
+      // Mock login for refresh, then a telemetry call to verify the new token is used
+      const loginScope = nock(BASE_URL)
         .post('/api/auth/login')
         .reply(200, { token: 'new-jwt-token', refreshToken: 'new-r' });
 
-      // Should not throw
       await client.refreshAuth();
+      expect(loginScope.isDone()).toBe(true);
+
+      // Verify the refreshed token is used on the next request
+      nock(BASE_URL, { reqheaders: { 'X-Authorization': 'Bearer new-jwt-token' } })
+        .get(/\/api\/plugins\/telemetry\/ASSET\/silo-1\/values\/timeseries/)
+        .reply(200, makeSiloTelemetry());
+
+      const result = await client.getSiloTelemetry('silo-1');
+      expect(result.avgTemperature.value).toBe(20.3);
     });
   });
 });

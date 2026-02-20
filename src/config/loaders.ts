@@ -1,6 +1,7 @@
 import dotenv from 'dotenv';
 import type { AgrologConfig } from '../types.js';
-import { DEFAULT_BASE_URL, DEFAULT_TIMEOUT } from './constants.js';
+import { AgrologAPIError } from '../errors.js';
+import { DEFAULT_BASE_URL, DEFAULT_TIMEOUT, ERROR_CODES } from './constants.js';
 
 let dotenvLoaded = false;
 
@@ -26,14 +27,16 @@ export function loadConfig(config?: AgrologConfig): ResolvedConfig {
   const debug = config?.debug ?? false;
 
   if (!username) {
-    throw new Error(
+    throw new AgrologAPIError(
       'Agrolog username is required. Pass it via config or set AGROLOG_USERNAME env var.',
+      ERROR_CODES.AUTH_FAILED,
     );
   }
 
   if (!password) {
-    throw new Error(
+    throw new AgrologAPIError(
       'Agrolog password is required. Pass it via config or set AGROLOG_PASSWORD env var.',
+      ERROR_CODES.AUTH_FAILED,
     );
   }
 

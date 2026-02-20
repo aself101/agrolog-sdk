@@ -30,9 +30,11 @@ describe('TokenManager', () => {
 
   it('returns cached token on subsequent calls', async () => {
     const client = createMockHttpClient();
-    await manager.getValidToken(client);
-    await manager.getValidToken(client);
+    const t1 = await manager.getValidToken(client);
+    const t2 = await manager.getValidToken(client);
 
+    expect(t1).toBe('test-token');
+    expect(t2).toBe('test-token');
     expect(client.requestNoAuth).toHaveBeenCalledTimes(1);
   });
 
