@@ -85,6 +85,7 @@ export class AgrologClient {
   /**
    * Returns the topology discovered by the last `connect()` call.
    *
+   * @returns The site topology from the last `connect()` call
    * @throws {AgrologAPIError} If `connect()` has not been called
    */
   getTopology(): SiteTopology {
@@ -104,6 +105,7 @@ export class AgrologClient {
    * All temperature values are raw Celsius from the API.
    *
    * @param siloId - Asset ID of the silo (from topology.silos)
+   * @returns Parsed silo telemetry with min/avg/max temperature and moisture values
    */
   async getSiloTelemetry(siloId: string): Promise<SiloTelemetry> {
     this.connectedTopology();
@@ -116,6 +118,7 @@ export class AgrologClient {
    * from the API (null if not available — no averaging is applied).
    *
    * @param sensorDeviceId - Device ID of the sensor line
+   * @returns Per-sensor readings for sensors 1–3 with temperature, moisture, and deltas
    */
   async getSensorLineTelemetry(sensorDeviceId: string): Promise<SensorLineTelemetry> {
     this.connectedTopology();
@@ -158,6 +161,7 @@ export class AgrologClient {
    * Fetches the on/off state of an aeration system.
    *
    * @param aeratorAssetId - Asset ID of the aerator (from topology.aerators)
+   * @returns Current on/off state with timestamp
    */
   async getAerationState(aeratorAssetId: string): Promise<AerationState> {
     this.connectedTopology();
@@ -169,6 +173,7 @@ export class AgrologClient {
    *
    * @param entityId - Asset ID to query alarms for
    * @param limit - Maximum number of alarms to return (default: 10)
+   * @returns Array of active alarms for the entity
    */
   async getAlarms(entityId: string, limit?: number): Promise<Alarm[]> {
     this.connectedTopology();
@@ -182,6 +187,7 @@ export class AgrologClient {
    * headspace sensor, level indicator).
    *
    * @param siloId - Asset ID of the silo
+   * @returns Discovered devices (temperature sensors, moisture sensors, headspace, level indicator)
    */
   async getSiloDevices(siloId: string): Promise<SiloDevices> {
     this.connectedTopology();
@@ -193,7 +199,7 @@ export class AgrologClient {
   /**
    * Fetches telemetry for all silos in the topology in parallel.
    *
-   * @returns Map of siloAssetId → SiloTelemetry
+   * @returns Map of silo asset ID to SiloTelemetry for all silos in the topology
    */
   async getAllSiloTelemetry(): Promise<Map<string, SiloTelemetry>> {
     const topology = this.connectedTopology();

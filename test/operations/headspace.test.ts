@@ -1,28 +1,20 @@
 import { describe, it, expect, beforeAll, afterAll, afterEach } from 'vitest';
 import nock from 'nock';
-import { AgrologHttpClient } from '../../src/http/http-client.js';
 import { getHeadspaceTelemetry } from '../../src/operations/headspace.js';
-import { makeSiloDevicesResponse, makeHeadspaceTelemetry } from '../test-setup.js';
-
-const BASE_URL = 'http://localhost:8080';
+import { makeSiloDevicesResponse, makeHeadspaceTelemetry, createTestHttpClient, TEST_BASE_URL } from '../test-setup.js';
 
 describe('getHeadspaceTelemetry', () => {
-  let client: AgrologHttpClient;
+  const client = createTestHttpClient();
 
-  beforeAll(() => {
-    nock.disableNetConnect();
-    client = new AgrologHttpClient(BASE_URL, 5000);
-    client.setAuth(async () => 'mock-token', async () => { /* no-op */ });
-  });
-
+  beforeAll(() => nock.disableNetConnect());
   afterAll(() => nock.enableNetConnect());
   afterEach(() => nock.cleanAll());
 
   it('discovers headspace device then fetches telemetry', async () => {
     // First call: discover silo devices
-    nock(BASE_URL).post('/api/devices').reply(200, makeSiloDevicesResponse());
+    nock(TEST_BASE_URL).post('/api/devices').reply(200, makeSiloDevicesResponse());
     // Second call: fetch headspace telemetry
-    nock(BASE_URL)
+    nock(TEST_BASE_URL)
       .get(/\/api\/plugins\/telemetry\/DEVICE\/headspace-1\/values\/timeseries/)
       .reply(200, makeHeadspaceTelemetry());
 
@@ -34,7 +26,7 @@ describe('getHeadspaceTelemetry', () => {
   });
 
   it('throws when no headspace sensor exists', async () => {
-    nock(BASE_URL).post('/api/devices').reply(200, [
+    nock(TEST_BASE_URL).post('/api/devices').reply(200, [
       { id: { id: 'temp-1', entityType: 'DEVICE' }, name: 'Temp', type: 'temperature_sensor_lines' },
     ]);
 

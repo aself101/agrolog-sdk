@@ -1,4 +1,16 @@
 import type { RawTelemetry, RawAlarmResponse, RawAsset, RawDevice } from '../src/types-internal.js';
+import { AgrologHttpClient } from '../src/http/http-client.js';
+
+// ─── Shared Test Infrastructure ─────────────────────────────────
+
+export const TEST_BASE_URL = 'http://localhost:8080';
+
+/** Creates an AgrologHttpClient wired with a no-op mock auth for unit tests. */
+export function createTestHttpClient(): AgrologHttpClient {
+  const client = new AgrologHttpClient(TEST_BASE_URL, 5000);
+  client.setAuth(async () => 'mock-token', async () => { /* no-op */ });
+  return client;
+}
 
 /** Stable mock timestamp used across all test fixtures (2023-11-14T22:13:20Z). */
 export const MOCK_TS = 1700000000000;

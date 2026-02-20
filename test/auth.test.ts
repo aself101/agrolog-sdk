@@ -1,5 +1,6 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { TokenManager } from '../src/auth.js';
+import { TOKEN_TTL_MS, TOKEN_REFRESH_BUFFER_MS } from '../src/config/constants.js';
 import type { AgrologHttpClient } from '../src/http/http-client.js';
 
 function createMockHttpClient(token = 'test-token'): AgrologHttpClient {
@@ -63,6 +64,29 @@ describe('TokenManager', () => {
     expect(t3).toBe('test-token');
     // Only 1 actual login call
     expect(client.requestNoAuth).toHaveBeenCalledTimes(1);
+  });
+
+  it('re-acquires token when approaching expiry boundary', async () => {
+    vi.useFakeTimers();
+    try {
+      const client = createMockHttpClient('first-token');
+      await manager.getValidToken(client);
+      expect(client.requestNoAuth).toHaveBeenCalledTimes(1);
+
+      // Advance time to exactly the refresh boundary
+      vi.advanceTimersByTime(TOKEN_TTL_MS - TOKEN_REFRESH_BUFFER_MS);
+
+      (client.requestNoAuth as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+        token: 'refreshed-token',
+        refreshToken: 'refresh-2',
+      });
+
+      const token = await manager.getValidToken(client);
+      expect(token).toBe('refreshed-token');
+      expect(client.requestNoAuth).toHaveBeenCalledTimes(2);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it('refreshToken force re-acquires', async () => {

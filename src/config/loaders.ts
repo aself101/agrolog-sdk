@@ -3,6 +3,8 @@ import type { AgrologConfig } from '../types.js';
 import { AgrologAPIError } from '../errors.js';
 import { DEFAULT_BASE_URL, DEFAULT_TIMEOUT, ERROR_CODES } from './constants.js';
 
+// Load .env once per process to avoid repeated disk reads.
+// dotenv.config() does not override existing env vars, so this is safe to call once.
 let dotenvLoaded = false;
 
 export interface ResolvedConfig {

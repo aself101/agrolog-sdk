@@ -1,26 +1,18 @@
 import { describe, it, expect, beforeAll, afterAll, afterEach } from 'vitest';
 import nock from 'nock';
-import { AgrologHttpClient } from '../../src/http/http-client.js';
 import { getAlarms } from '../../src/operations/alarms.js';
-import { makeAlarmResponse } from '../test-setup.js';
-
-const BASE_URL = 'http://localhost:8080';
+import { makeAlarmResponse, createTestHttpClient, TEST_BASE_URL } from '../test-setup.js';
 
 describe('getAlarms', () => {
-  let client: AgrologHttpClient;
+  const client = createTestHttpClient();
 
-  beforeAll(() => {
-    nock.disableNetConnect();
-    client = new AgrologHttpClient(BASE_URL, 5000);
-    client.setAuth(async () => 'mock-token', async () => { /* no-op */ });
-  });
-
+  beforeAll(() => nock.disableNetConnect());
   afterAll(() => nock.enableNetConnect());
   afterEach(() => nock.cleanAll());
 
-  it('fetches and parses alarms', async () => {
-    nock(BASE_URL)
-      .get(/\/api\/alarm\/ASSET\/silo-1/)
+  it('fetches alarms with default limit of 10', async () => {
+    nock(TEST_BASE_URL)
+      .get(/\/api\/alarm\/ASSET\/silo-1\?searchStatus=ACTIVE&limit=10/)
       .reply(200, makeAlarmResponse());
 
     const result = await getAlarms(client, 'silo-1');
@@ -31,7 +23,7 @@ describe('getAlarms', () => {
   });
 
   it('supports custom limit', async () => {
-    nock(BASE_URL)
+    nock(TEST_BASE_URL)
       .get(/\/api\/alarm\/ASSET\/silo-1\?searchStatus=ACTIVE&limit=5/)
       .reply(200, makeAlarmResponse());
 

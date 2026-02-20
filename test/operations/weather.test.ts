@@ -1,26 +1,18 @@
 import { describe, it, expect, beforeAll, afterAll, afterEach } from 'vitest';
 import nock from 'nock';
-import { AgrologHttpClient } from '../../src/http/http-client.js';
 import { getWeatherTelemetry } from '../../src/operations/weather.js';
-import { makeWeatherDevicesResponse, makeWeatherTelemetry } from '../test-setup.js';
-
-const BASE_URL = 'http://localhost:8080';
+import { makeWeatherDevicesResponse, makeWeatherTelemetry, createTestHttpClient, TEST_BASE_URL } from '../test-setup.js';
 
 describe('getWeatherTelemetry', () => {
-  let client: AgrologHttpClient;
+  const client = createTestHttpClient();
 
-  beforeAll(() => {
-    nock.disableNetConnect();
-    client = new AgrologHttpClient(BASE_URL, 5000);
-    client.setAuth(async () => 'mock-token', async () => { /* no-op */ });
-  });
-
+  beforeAll(() => nock.disableNetConnect());
   afterAll(() => nock.enableNetConnect());
   afterEach(() => nock.cleanAll());
 
   it('discovers weather device then fetches telemetry', async () => {
-    nock(BASE_URL).post('/api/devices').reply(200, makeWeatherDevicesResponse());
-    nock(BASE_URL)
+    nock(TEST_BASE_URL).post('/api/devices').reply(200, makeWeatherDevicesResponse());
+    nock(TEST_BASE_URL)
       .get(/\/api\/plugins\/telemetry\/DEVICE\/ws-device-1\/values\/timeseries/)
       .reply(200, makeWeatherTelemetry());
 

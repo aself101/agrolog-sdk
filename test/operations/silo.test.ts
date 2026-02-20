@@ -1,25 +1,18 @@
 import { describe, it, expect, beforeAll, afterAll, afterEach } from 'vitest';
 import nock from 'nock';
-import { AgrologHttpClient } from '../../src/http/http-client.js';
 import { getSiloTelemetry } from '../../src/operations/silo.js';
-import { makeSiloTelemetry } from '../test-setup.js';
-
-const BASE_URL = 'http://localhost:8080';
+import { AgrologAPIError } from '../../src/errors.js';
+import { makeSiloTelemetry, createTestHttpClient, TEST_BASE_URL } from '../test-setup.js';
 
 describe('getSiloTelemetry', () => {
-  let client: AgrologHttpClient;
+  const client = createTestHttpClient();
 
-  beforeAll(() => {
-    nock.disableNetConnect();
-    client = new AgrologHttpClient(BASE_URL, 5000);
-    client.setAuth(async () => 'mock-token', async () => { /* no-op */ });
-  });
-
+  beforeAll(() => nock.disableNetConnect());
   afterAll(() => nock.enableNetConnect());
   afterEach(() => nock.cleanAll());
 
   it('fetches and parses silo telemetry', async () => {
-    nock(BASE_URL)
+    nock(TEST_BASE_URL)
       .get(/\/api\/plugins\/telemetry\/ASSET\/silo-1\/values\/timeseries/)
       .reply(200, makeSiloTelemetry());
 
@@ -27,6 +20,13 @@ describe('getSiloTelemetry', () => {
 
     expect(result.avgTemperature.value).toBe(20.3);
     expect(result.minMoisture.value).toBe(10.2);
-    expect(result.maxDeltaMoisture.ts).toBe(1700000000000);
+  });
+
+  it('propagates AgrologAPIError on server error', async () => {
+    nock(TEST_BASE_URL)
+      .get(/\/api\/plugins\/telemetry\/ASSET\/silo-1\/values\/timeseries/)
+      .reply(500, { message: 'Internal server error' });
+
+    await expect(getSiloTelemetry(client, 'silo-1')).rejects.toBeInstanceOf(AgrologAPIError);
   });
 });

@@ -50,7 +50,7 @@ const client = new AgrologClient({
   password: 'secret',
   baseUrl: 'http://console.agrolog.io:8080',
   timeout: 30000,  // ms, default 30s
-  debug: false,    // log HTTP requests to console
+  debug: false,    // log HTTP requests, auth refreshes, and retries to console
 });
 
 // From environment / .env file
@@ -271,7 +271,7 @@ All temperature values are **raw Celsius** — no conversion is applied. If `sen
 // Primary imports (recommended)
 import { AgrologClient, AgrologAPIError } from 'agrolog-sdk';
 import type { SiloTelemetry, WeatherTelemetry, Alarm } from 'agrolog-sdk/types';
-import { ERROR_CODES, DEFAULT_BASE_URL } from 'agrolog-sdk/config';
+import { ERROR_CODES, DEFAULT_BASE_URL, DEFAULT_TIMEOUT } from 'agrolog-sdk/config';
 
 // Alternative: import error class from its dedicated path
 // import { AgrologAPIError } from 'agrolog-sdk/errors';

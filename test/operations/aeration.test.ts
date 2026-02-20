@@ -1,29 +1,30 @@
 import { describe, it, expect, beforeAll, afterAll, afterEach } from 'vitest';
 import nock from 'nock';
-import { AgrologHttpClient } from '../../src/http/http-client.js';
 import { getAerationState } from '../../src/operations/aeration.js';
-import { makeAerationTelemetry } from '../test-setup.js';
-
-const BASE_URL = 'http://localhost:8080';
+import { AgrologAPIError } from '../../src/errors.js';
+import { makeAerationTelemetry, createTestHttpClient, TEST_BASE_URL } from '../test-setup.js';
 
 describe('getAerationState', () => {
-  let client: AgrologHttpClient;
+  const client = createTestHttpClient();
 
-  beforeAll(() => {
-    nock.disableNetConnect();
-    client = new AgrologHttpClient(BASE_URL, 5000);
-    client.setAuth(async () => 'mock-token', async () => { /* no-op */ });
-  });
-
+  beforeAll(() => nock.disableNetConnect());
   afterAll(() => nock.enableNetConnect());
   afterEach(() => nock.cleanAll());
 
   it('fetches and parses aeration state', async () => {
-    nock(BASE_URL)
+    nock(TEST_BASE_URL)
       .get(/\/api\/plugins\/telemetry\/ASSET\/aer-1\/values\/timeseries/)
       .reply(200, makeAerationTelemetry());
 
     const result = await getAerationState(client, 'aer-1');
     expect(result.state.value).toBe('on');
+  });
+
+  it('propagates AgrologAPIError on server error', async () => {
+    nock(TEST_BASE_URL)
+      .get(/\/api\/plugins\/telemetry\/ASSET\/aer-1\/values\/timeseries/)
+      .reply(500, { message: 'Internal server error' });
+
+    await expect(getAerationState(client, 'aer-1')).rejects.toBeInstanceOf(AgrologAPIError);
   });
 });
