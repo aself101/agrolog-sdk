@@ -138,10 +138,40 @@ describe('AgrologClient', () => {
         .get(/\/api\/plugins\/telemetry\/ASSET\/silo-2\/values\/timeseries/)
         .reply(200, makeSiloTelemetry());
 
-      const results = await client.getAllSiloTelemetry();
-      expect(results.size).toBe(2);
-      expect(results.get('silo-1')?.avgTemperature.value).toBe(20.3);
+      const bulk = await client.getAllSiloTelemetry();
+      expect(bulk.results.size).toBe(2);
+      expect(bulk.errors.size).toBe(0);
+      expect(bulk.results.get('silo-1')?.avgTemperature.value).toBe(20.3);
     });
+
+    it('getAllSiloTelemetry returns partial results when some silos fail', async () => {
+      nock(BASE_URL)
+        .get(/\/api\/plugins\/telemetry\/ASSET\/silo-1\/values\/timeseries/)
+        .reply(200, makeSiloTelemetry());
+      nock(BASE_URL)
+        .get(/\/api\/plugins\/telemetry\/ASSET\/silo-2\/values\/timeseries/)
+        .reply(500, { message: 'Internal Server Error' });
+
+      const bulk = await client.getAllSiloTelemetry();
+      expect(bulk.results.size).toBe(1);
+      expect(bulk.errors.size).toBe(1);
+      expect(bulk.results.get('silo-1')?.avgTemperature.value).toBe(20.3);
+      expect(bulk.errors.get('silo-2')).toBeInstanceOf(Error);
+    });
+
+    it('getAllSiloTelemetry throws when all silos fail', async () => {
+      // Each silo retries on 500, so we need enough nock interceptors for retries
+      nock(BASE_URL)
+        .get(/\/api\/plugins\/telemetry\/ASSET\/silo-1\/values\/timeseries/)
+        .times(4)
+        .reply(500, { message: 'fail' });
+      nock(BASE_URL)
+        .get(/\/api\/plugins\/telemetry\/ASSET\/silo-2\/values\/timeseries/)
+        .times(4)
+        .reply(500, { message: 'fail' });
+
+      await expect(client.getAllSiloTelemetry()).rejects.toThrow();
+    }, 30_000);
 
     it('discoverSiloDevices returns devices', async () => {
       nock(BASE_URL).post('/api/devices').reply(200, makeSiloDevicesResponse());

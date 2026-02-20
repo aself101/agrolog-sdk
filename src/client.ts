@@ -15,6 +15,7 @@ import type {
   SiteTopology,
   SiloDevices,
   SiloTelemetry,
+  BulkTelemetryResult,
   SensorLineTelemetry,
   HeadspaceTelemetry,
   WeatherTelemetry,
@@ -198,34 +199,41 @@ export class AgrologClient {
 
   /**
    * Fetches telemetry for all silos in the topology in parallel.
+   * Uses `Promise.allSettled` — partial results are returned if some silos fail.
+   * Check `errors` on the result to detect incomplete data.
+   * Throws only if **all** silos fail.
    *
-   * @returns Map of silo asset ID to SiloTelemetry for all silos in the topology
+   * @returns Object with `results` Map and `errors` Map for any failed silos
    */
-  async getAllSiloTelemetry(): Promise<Map<string, SiloTelemetry>> {
+  async getAllSiloTelemetry(): Promise<BulkTelemetryResult> {
     const topology = this.connectedTopology();
-    const results = await Promise.allSettled(
+    const settled = await Promise.allSettled(
       topology.silos.map(async silo => {
         const telemetry = await getSiloTelemetry(this.httpClient, silo.assetId);
         return [silo.assetId, telemetry] as const;
       }),
     );
 
-    const map = new Map<string, SiloTelemetry>();
-    const errors: Error[] = [];
+    const results = new Map<string, SiloTelemetry>();
+    const errors = new Map<string, Error>();
 
-    for (const result of results) {
-      if (result.status === 'fulfilled') {
-        map.set(result.value[0], result.value[1]);
-      } else {
-        errors.push(result.reason instanceof Error ? result.reason : new Error(String(result.reason)));
+    for (let i = 0; i < settled.length; i++) {
+      const result = settled[i];
+      const siloId = topology.silos[i]?.assetId ?? `unknown-${i}`;
+      if (result?.status === 'fulfilled') {
+        results.set(result.value[0], result.value[1]);
+      } else if (result) {
+        const reason = result.reason;
+        errors.set(siloId, reason instanceof Error ? reason : new Error(String(reason)));
       }
     }
 
-    if (errors.length > 0 && map.size === 0) {
-      throw errors[0]; // All failed — throw the first error
+    if (errors.size > 0 && results.size === 0) {
+      const firstError = errors.values().next().value;
+      if (firstError) throw firstError;
     }
 
-    return map;
+    return { results, errors };
   }
 
   // ─── Auth ────────────────────────────────────────────────────

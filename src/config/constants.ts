@@ -1,11 +1,16 @@
 // ─── Entity ID Validation ────────────────────────────────────────
 
+import { AgrologAPIError } from '../errors.js';
+
 const SAFE_ID_PATTERN = /^[a-zA-Z0-9_-]+$/;
 
 /** Validates that an entity ID is safe for URL path interpolation. */
-function validateId(id: string): string {
+export function validateId(id: string): string {
   if (!SAFE_ID_PATTERN.test(id)) {
-    throw new TypeError(`Invalid entity ID format: "${id}". Expected alphanumeric, hyphens, or underscores.`);
+    throw new AgrologAPIError(
+      `Invalid entity ID format: "${id}". Expected alphanumeric, hyphens, or underscores.`,
+      'REQUEST_FAILED',
+    );
   }
   return id;
 }
@@ -80,6 +85,7 @@ export const DISCOVERY_DEVICE_TYPES = {
 
 // ─── Timing ──────────────────────────────────────────────────────
 
+/** Default HTTP request timeout in milliseconds (30 seconds). */
 export const DEFAULT_TIMEOUT = 30_000;
 export const TOKEN_TTL_MS = 15 * 60 * 1000; // 15 minutes
 export const TOKEN_REFRESH_BUFFER_MS = 2 * 60 * 1000; // 2 minutes before expiry

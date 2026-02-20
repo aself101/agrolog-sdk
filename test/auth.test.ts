@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { TokenManager } from '../src/auth.js';
+import { AgrologAPIError } from '../src/errors.js';
 import { TOKEN_TTL_MS, TOKEN_REFRESH_BUFFER_MS } from '../src/config/constants.js';
 import type { AgrologHttpClient } from '../src/http/http-client.js';
 
@@ -100,5 +101,66 @@ describe('TokenManager', () => {
 
     const token = await manager.refreshToken(client);
     expect(token).toBe('token-2');
+  });
+
+  it('throws AgrologAPIError when login response has no token', async () => {
+    const client = {
+      requestNoAuth: vi.fn().mockResolvedValue({ token: '', refreshToken: 'r' }),
+      request: vi.fn(),
+      setAuth: vi.fn(),
+    } as unknown as AgrologHttpClient;
+
+    await expect(manager.getValidToken(client)).rejects.toThrow(AgrologAPIError);
+    await expect(manager.getValidToken(client)).rejects.toThrow('Login response missing valid token');
+  });
+
+  it('throws AgrologAPIError when login response token is not a string', async () => {
+    const client = {
+      requestNoAuth: vi.fn().mockResolvedValue({ token: 12345, refreshToken: 'r' }),
+      request: vi.fn(),
+      setAuth: vi.fn(),
+    } as unknown as AgrologHttpClient;
+
+    await expect(manager.getValidToken(client)).rejects.toThrow(AgrologAPIError);
+  });
+
+  it('returns cached token 1ms before the refresh boundary', async () => {
+    vi.useFakeTimers();
+    try {
+      const client = createMockHttpClient('cached-token');
+      await manager.getValidToken(client);
+
+      // Advance to 1ms before the refresh boundary
+      vi.advanceTimersByTime(TOKEN_TTL_MS - TOKEN_REFRESH_BUFFER_MS - 1);
+
+      const token = await manager.getValidToken(client);
+      expect(token).toBe('cached-token');
+      // Still only 1 login call — no refresh triggered
+      expect(client.requestNoAuth).toHaveBeenCalledTimes(1);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('refreshes token exactly at the refresh boundary', async () => {
+    vi.useFakeTimers();
+    try {
+      const client = createMockHttpClient('first-token');
+      await manager.getValidToken(client);
+
+      // Advance to exactly the refresh boundary
+      vi.advanceTimersByTime(TOKEN_TTL_MS - TOKEN_REFRESH_BUFFER_MS);
+
+      (client.requestNoAuth as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+        token: 'boundary-token',
+        refreshToken: 'refresh-2',
+      });
+
+      const token = await manager.getValidToken(client);
+      expect(token).toBe('boundary-token');
+      expect(client.requestNoAuth).toHaveBeenCalledTimes(2);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });

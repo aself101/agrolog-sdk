@@ -12,6 +12,7 @@ export type {
   SiloDevice,
   SiloDevices,
   SiloTelemetry,
+  BulkTelemetryResult,
   SensorLineTelemetry,
   HeadspaceTelemetry,
   WeatherTelemetry,

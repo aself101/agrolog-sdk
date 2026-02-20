@@ -30,4 +30,40 @@ describe('getAlarms', () => {
     const result = await getAlarms(client, 'silo-1', 5);
     expect(result).toHaveLength(1);
   });
+
+  it('clamps limit to minimum of 1', async () => {
+    nock(TEST_BASE_URL)
+      .get(/\/api\/alarm\/ASSET\/silo-1\?searchStatus=ACTIVE&limit=1/)
+      .reply(200, makeAlarmResponse());
+
+    const result = await getAlarms(client, 'silo-1', 0);
+    expect(result).toHaveLength(1);
+  });
+
+  it('clamps limit to maximum of 1000', async () => {
+    nock(TEST_BASE_URL)
+      .get(/\/api\/alarm\/ASSET\/silo-1\?searchStatus=ACTIVE&limit=1000/)
+      .reply(200, makeAlarmResponse());
+
+    const result = await getAlarms(client, 'silo-1', 9999);
+    expect(result).toHaveLength(1);
+  });
+
+  it('floors fractional limit', async () => {
+    nock(TEST_BASE_URL)
+      .get(/\/api\/alarm\/ASSET\/silo-1\?searchStatus=ACTIVE&limit=5/)
+      .reply(200, makeAlarmResponse());
+
+    const result = await getAlarms(client, 'silo-1', 5.9);
+    expect(result).toHaveLength(1);
+  });
+
+  it('clamps negative limit to 1', async () => {
+    nock(TEST_BASE_URL)
+      .get(/\/api\/alarm\/ASSET\/silo-1\?searchStatus=ACTIVE&limit=1/)
+      .reply(200, makeAlarmResponse());
+
+    const result = await getAlarms(client, 'silo-1', -5);
+    expect(result).toHaveLength(1);
+  });
 });

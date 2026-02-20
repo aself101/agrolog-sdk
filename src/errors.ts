@@ -41,7 +41,7 @@ export class AgrologAPIError extends Error {
 
   /**
    * Returns true if this error is safe to retry (5xx server errors,
-   * network timeouts, SERVICE_UNAVAILABLE).
+   * timeouts, network errors, SERVICE_UNAVAILABLE).
    *
    * Note: HTTP 500 is also retryable because `http-client.ts` maps it to
    * the `SERVICE_UNAVAILABLE` error code, which is matched by the code check below.
@@ -50,7 +50,9 @@ export class AgrologAPIError extends Error {
     if (this.httpStatus && RETRYABLE_HTTP_STATUSES.has(this.httpStatus)) {
       return true;
     }
-    return this.code === 'SERVICE_UNAVAILABLE';
+    return this.code === 'SERVICE_UNAVAILABLE'
+      || this.code === 'TIMEOUT'
+      || this.code === 'NETWORK_ERROR';
   }
 
   /**

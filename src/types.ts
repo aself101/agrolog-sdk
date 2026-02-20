@@ -154,6 +154,14 @@ export interface AerationState {
   readonly state: TimestampedValue<string>;
 }
 
+/** Result of {@link AgrologClient.getAllSiloTelemetry}, including both successful and failed silos. */
+export interface BulkTelemetryResult {
+  /** Successfully fetched telemetry, keyed by silo asset ID. */
+  readonly results: ReadonlyMap<string, SiloTelemetry>;
+  /** Errors for silos that failed, keyed by silo asset ID. */
+  readonly errors: ReadonlyMap<string, Error>;
+}
+
 /** An active alarm reported by ThingsBoard for an entity. */
 export interface Alarm {
   readonly alarmId: string;

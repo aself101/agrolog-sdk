@@ -70,7 +70,7 @@ const client = new AgrologClient();
 | `baseUrl` | `string` | `https://console.agrolog.io` | ThingsBoard base URL |
 | `timeout` | `number` | `30000` | HTTP timeout (ms) |
 | `logger` | `(msg: string) => void` | — | Debug log callback. Log messages include request paths and retry info but never credentials or tokens. |
-| `debug` | `boolean` | — | **Deprecated.** When `true` and no `logger` set, uses `console.log`. Prefer `logger`. |
+| `debug` | `boolean` | — | **Deprecated.** When `true` and no `logger` set, uses `console.log`. Use `logger: (msg) => console.log(msg)` instead. |
 
 **.env file example:**
 
@@ -208,20 +208,41 @@ const { siloId, devices } = await client.discoverSiloDevices(topology.silos[0].a
 devices.forEach(d => console.log(`${d.name} (${d.type}): ${d.deviceId}`));
 ```
 
-### `client.getAllSiloTelemetry(): Promise<Map<string, SiloTelemetry>>`
+### `client.getAllSiloTelemetry(): Promise<BulkTelemetryResult>`
 
-Fetches telemetry for all silos in parallel. Uses `Promise.allSettled` — partial results are returned if some silos fail. Throws only if all silos fail.
+Fetches telemetry for all silos in parallel. Uses `Promise.allSettled` — partial results are returned if some silos fail. Throws only if **all** silos fail.
 
 ```ts
-const all = await client.getAllSiloTelemetry();
-for (const [siloId, telemetry] of all) {
+const bulk = await client.getAllSiloTelemetry();
+
+// Successful results
+for (const [siloId, telemetry] of bulk.results) {
   console.log(`${siloId}: ${telemetry.avgTemperature.value}°C`);
+}
+
+// Check for partial failures
+if (bulk.errors.size > 0) {
+  for (const [siloId, error] of bulk.errors) {
+    console.warn(`Failed to fetch ${siloId}: ${error.message}`);
+  }
 }
 ```
 
 ### `client.refreshAuth(): Promise<void>`
 
 Forces a token refresh. Useful if you receive an auth error outside the automatic retry flow.
+
+```ts
+try {
+  await client.getSiloTelemetry(siloId);
+} catch (err) {
+  if (err instanceof AgrologAPIError && err.isAuthError()) {
+    await client.refreshAuth();
+    // Retry the request with the new token
+    const telemetry = await client.getSiloTelemetry(siloId);
+  }
+}
+```
 
 ## Error Handling
 
@@ -241,7 +262,7 @@ try {
     // err.endpoint   — API endpoint that failed
 
     if (err.isRetryable()) {
-      // Safe to retry: 502, 503, 504, or SERVICE_UNAVAILABLE
+      // Safe to retry: 5xx, TIMEOUT, or NETWORK_ERROR
     }
     if (err.isAuthError()) {
       // Authentication failed: 401, 403, AUTH_FAILED, or TOKEN_EXPIRED
@@ -297,6 +318,7 @@ import type {
   SiloDevice,
   SiloDevices,
   SiloTelemetry,
+  BulkTelemetryResult,
   SensorLineTelemetry,
   HeadspaceTelemetry,
   WeatherTelemetry,

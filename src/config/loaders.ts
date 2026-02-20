@@ -27,6 +27,20 @@ export function loadConfig(config?: AgrologConfig): ResolvedConfig {
   const password = config?.password ?? process.env.AGROLOG_PASSWORD;
   const baseUrl = config?.baseUrl ?? process.env.AGROLOG_THINGSBOARD_URL ?? DEFAULT_BASE_URL;
   const timeout = config?.timeout ?? DEFAULT_TIMEOUT;
+
+  if (baseUrl.startsWith('http://') && !baseUrl.startsWith('http://localhost')) {
+    process.emitWarning(
+      `baseUrl "${baseUrl}" uses HTTP. Credentials will be sent in plaintext. Use HTTPS in production.`,
+      'AgrologSecurityWarning',
+    );
+  }
+
+  if (config?.debug && !config?.logger) {
+    process.emitWarning(
+      '`debug: true` is deprecated. Use `logger: (msg) => console.log(msg)` instead.',
+      'DeprecationWarning',
+    );
+  }
   const log = config?.logger ?? (config?.debug ? console.log : null);
 
   if (!username) {

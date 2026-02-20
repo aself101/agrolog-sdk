@@ -116,7 +116,7 @@ export function parseAlarms(raw: RawAlarmResponse): Alarm[] {
   if (!raw || !raw.data) return [];
 
   return raw.data.map(alarm => ({
-    alarmId: alarm.id.id,
+    alarmId: alarm.id?.id ?? '',
     name: alarm.name,
     type: alarm.type,
     severity: alarm.severity,
@@ -124,7 +124,7 @@ export function parseAlarms(raw: RawAlarmResponse): Alarm[] {
     createdTime: alarm.createdTime,
     startTs: alarm.startTs,
     endTs: alarm.endTs,
-    originatorId: alarm.originator.id,
-    details: alarm.details,
+    originatorId: alarm.originator?.id ?? '',
+    details: alarm.details ?? {},
   }));
 }
