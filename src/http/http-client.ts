@@ -1,26 +1,56 @@
-import axios, { type AxiosInstance, type AxiosRequestConfig, type Method } from 'axios';
 import { AgrologAPIError } from '../errors.js';
 import { BACKOFF_BASE_MS, ERROR_CODES, MAX_RETRIES } from '../config/constants.js';
 import type { RequestOptions } from '../types-internal.js';
 
+type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
+
+// ─── Internal sentinel errors (not exported) ────────────────────
+
+class FetchHttpError extends Error {
+  constructor(
+    message: string,
+    readonly status: number,
+    readonly endpoint: string,
+  ) {
+    super(message);
+    this.name = 'FetchHttpError';
+  }
+}
+
+class FetchTimeoutError extends Error {
+  constructor(readonly endpoint: string) {
+    super(`Request timed out: ${endpoint}`);
+    this.name = 'FetchTimeoutError';
+  }
+}
+
+class FetchNetworkError extends Error {
+  constructor(message: string, readonly endpoint: string) {
+    super(message);
+    this.name = 'FetchNetworkError';
+  }
+}
+
+// ─── HTTP Client ────────────────────────────────────────────────
+
 export class AgrologHttpClient {
-  private readonly client: AxiosInstance;
+  private readonly baseUrl: string;
+  private readonly timeout: number;
+  private readonly defaultHeaders: Record<string, string>;
   private readonly debug: boolean;
   private readonly backoffBaseMs: number;
   private tokenGetter: (() => Promise<string>) | null = null;
   private tokenRefresher: (() => Promise<void>) | null = null;
 
   constructor(baseUrl: string, timeout: number, debug = false, backoffBaseMs = BACKOFF_BASE_MS) {
+    this.baseUrl = baseUrl;
+    this.timeout = timeout;
+    this.defaultHeaders = {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+    };
     this.debug = debug;
     this.backoffBaseMs = backoffBaseMs;
-    this.client = axios.create({
-      baseURL: baseUrl,
-      timeout,
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-      },
-    });
   }
 
   setAuth(
@@ -32,7 +62,7 @@ export class AgrologHttpClient {
   }
 
   async request<T>(
-    method: Method,
+    method: HttpMethod,
     endpoint: string,
     data?: unknown,
     options?: RequestOptions,
@@ -42,21 +72,19 @@ export class AgrologHttpClient {
     for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
       try {
         const token = await this.getToken();
-        const config: AxiosRequestConfig = {
-          method,
-          url: endpoint,
-          data,
-          headers: { 'X-Authorization': `Bearer ${token}` },
-          params: options?.params,
-          timeout: options?.timeout,
-        };
 
         if (this.debug) {
           console.log(`[agrolog-sdk] ${method.toUpperCase()} ${endpoint} (attempt ${attempt + 1})`);
         }
 
-        const response = await this.client.request<T>(config);
-        return response.data;
+        return await this.doFetch<T>(
+          method,
+          endpoint,
+          data,
+          { 'X-Authorization': `Bearer ${token}` },
+          options?.params,
+          options?.timeout,
+        );
       } catch (error) {
         lastError = this.transformError(error, endpoint);
 
@@ -88,19 +116,78 @@ export class AgrologHttpClient {
   }
 
   async requestNoAuth<T>(
-    method: Method,
+    method: HttpMethod,
     endpoint: string,
     data?: unknown,
   ): Promise<T> {
     try {
-      const response = await this.client.request<T>({
-        method,
-        url: endpoint,
-        data,
-      });
-      return response.data;
+      return await this.doFetch<T>(method, endpoint, data);
     } catch (error) {
       throw this.transformError(error, endpoint);
+    }
+  }
+
+  private async doFetch<T>(
+    method: HttpMethod,
+    endpoint: string,
+    data?: unknown,
+    headers?: Record<string, string>,
+    params?: Record<string, string | number>,
+    perRequestTimeout?: number,
+  ): Promise<T> {
+    const url = new URL(endpoint, this.baseUrl);
+    if (params) {
+      for (const [key, value] of Object.entries(params)) {
+        url.searchParams.set(key, String(value));
+      }
+    }
+
+    const mergedHeaders: Record<string, string> = { ...this.defaultHeaders, ...headers };
+
+    // Don't send Content-Type on bodiless requests
+    if (data === undefined) {
+      delete mergedHeaders['Content-Type'];
+    }
+
+    const timeoutMs = perRequestTimeout ?? this.timeout;
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+    try {
+      const response = await fetch(url, {
+        method,
+        headers: mergedHeaders,
+        body: data !== undefined ? JSON.stringify(data) : undefined,
+        signal: controller.signal,
+      });
+
+      if (!response.ok) {
+        let errorMessage: string | undefined;
+        try {
+          const errorBody = await response.json() as Record<string, unknown>;
+          errorMessage = typeof errorBody.message === 'string' ? errorBody.message : undefined;
+        } catch {
+          // Body wasn't JSON — fall through to statusText
+        }
+        throw new FetchHttpError(errorMessage ?? response.statusText, response.status, endpoint);
+      }
+
+      return await response.json() as T;
+    } catch (error) {
+      if (error instanceof FetchHttpError) throw error;
+
+      if (error instanceof Error && error.name === 'AbortError') {
+        throw new FetchTimeoutError(endpoint);
+      }
+
+      // TypeError from fetch = network error (DNS failure, connection refused, etc.)
+      // Also catch any other unrecognized error as network error
+      throw new FetchNetworkError(
+        error instanceof Error ? error.message : String(error),
+        endpoint,
+      );
+    } finally {
+      clearTimeout(timeoutId);
     }
   }
 
@@ -117,27 +204,26 @@ export class AgrologHttpClient {
   private transformError(error: unknown, endpoint: string): AgrologAPIError {
     if (error instanceof AgrologAPIError) return error;
 
-    if (axios.isAxiosError(error)) {
-      const status = error.response?.status;
-      const message = error.response?.data?.message ?? error.message;
+    if (error instanceof FetchTimeoutError) {
+      return new AgrologAPIError(
+        `Request timed out: ${endpoint}`,
+        ERROR_CODES.TIMEOUT,
+        undefined,
+        endpoint,
+      );
+    }
 
-      if (error.code === 'ECONNABORTED' || error.code === 'ETIMEDOUT') {
-        return new AgrologAPIError(
-          `Request timed out: ${endpoint}`,
-          ERROR_CODES.TIMEOUT,
-          undefined,
-          endpoint,
-        );
-      }
+    if (error instanceof FetchNetworkError) {
+      return new AgrologAPIError(
+        `Network error: ${error.message}`,
+        ERROR_CODES.NETWORK_ERROR,
+        undefined,
+        endpoint,
+      );
+    }
 
-      if (!error.response) {
-        return new AgrologAPIError(
-          `Network error: ${error.message}`,
-          ERROR_CODES.NETWORK_ERROR,
-          undefined,
-          endpoint,
-        );
-      }
+    if (error instanceof FetchHttpError) {
+      const { status, message } = error;
 
       if (status === 401 || status === 403) {
         return new AgrologAPIError(
@@ -148,7 +234,7 @@ export class AgrologHttpClient {
         );
       }
 
-      if (status && status >= 500) {
+      if (status >= 500) {
         return new AgrologAPIError(
           `Server error: ${message}`,
           ERROR_CODES.SERVICE_UNAVAILABLE,
