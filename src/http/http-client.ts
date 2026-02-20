@@ -84,7 +84,7 @@ export class AgrologHttpClient {
       }
     }
 
-    throw lastError!;
+    throw lastError ?? new AgrologAPIError('Request failed after retries', ERROR_CODES.REQUEST_FAILED);
   }
 
   async requestNoAuth<T>(

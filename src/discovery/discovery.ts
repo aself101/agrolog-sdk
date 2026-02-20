@@ -5,7 +5,10 @@ import type { RawAsset, RawDevice, RawUserResponse } from '../types-internal.js'
 import type { SiteTopology, SiloDevices } from '../types.js';
 
 /** Build a ThingsBoard "Contains" relation query body. */
-function buildContainsQuery(rootType: string, rootId: string) {
+function buildContainsQuery(rootType: string, rootId: string): {
+  parameters: { direction: 'FROM'; maxLevel: number; rootType: string; rootId: string };
+  relationType: string;
+} {
   return {
     parameters: { direction: 'FROM' as const, maxLevel: 1, rootType, rootId },
     relationType: 'Contains',
@@ -13,7 +16,7 @@ function buildContainsQuery(rootType: string, rootId: string) {
 }
 
 /** Map a raw ThingsBoard asset to a typed asset record. */
-function mapAsset(a: RawAsset) {
+function mapAsset(a: RawAsset): { assetId: string; name: string; type: string } {
   return { assetId: a.id.id, name: a.name, type: a.type };
 }
 
@@ -28,14 +31,15 @@ export async function discoverTopology(client: AgrologHttpClient): Promise<SiteT
     ...buildContainsQuery('CUSTOMER', customerId),
   });
 
-  if (!sites || sites.length === 0) {
+  const firstSite = sites?.[0];
+  if (!firstSite) {
     throw new AgrologAPIError(
       'No sites found for this customer',
       ERROR_CODES.DISCOVERY_FAILED,
     );
   }
 
-  const siteId = sites[0].id.id;
+  const siteId = firstSite.id.id;
 
   // Step 3: Discover assets within the site
   const assets = await client.request<RawAsset[]>('POST', API_PATHS.ASSETS, {
@@ -79,12 +83,13 @@ export async function discoverWeatherDevice(
     ...buildContainsQuery('ASSET', weatherStationAssetId),
   });
 
-  if (!devices || devices.length === 0) {
+  const firstDevice = devices?.[0];
+  if (!firstDevice) {
     throw new AgrologAPIError(
       `No weather station device found for asset ${weatherStationAssetId}`,
       ERROR_CODES.DISCOVERY_FAILED,
     );
   }
 
-  return devices[0].id.id;
+  return firstDevice.id.id;
 }

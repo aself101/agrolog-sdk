@@ -1,9 +1,12 @@
 import type { RawTelemetry, RawAlarmResponse, RawAsset, RawDevice } from '../src/types-internal.js';
 
+/** Stable mock timestamp used across all test fixtures (2023-11-14T22:13:20Z). */
+export const MOCK_TS = 1700000000000;
+
 // ─── Mock Telemetry Factories ────────────────────────────────────
 
 export function makeSiloTelemetry(overrides: Partial<Record<string, [{ value: string; ts: number }]>> = {}): RawTelemetry {
-  const ts = 1700000000000;
+  const ts = MOCK_TS;
   const defaults: RawTelemetry = {
     'current_min_temperature': [{ value: '18.5', ts }],
     'current_avg_temperature': [{ value: '20.3', ts }],
@@ -22,7 +25,7 @@ export function makeSiloTelemetry(overrides: Partial<Record<string, [{ value: st
 }
 
 export function makeSensorLineTelemetry(): RawTelemetry {
-  const ts = 1700000000000;
+  const ts = MOCK_TS;
   return {
     'temperature-1': [{ value: '21.0', ts }],
     'delta-temperature-1': [{ value: '0.2', ts }],
@@ -40,7 +43,7 @@ export function makeSensorLineTelemetry(): RawTelemetry {
 }
 
 export function makeHeadspaceTelemetry(): RawTelemetry {
-  const ts = 1700000000000;
+  const ts = MOCK_TS;
   return {
     'temperature': [{ value: '25.0', ts }],
     'dewpoint': [{ value: '15.0', ts }],
@@ -51,7 +54,7 @@ export function makeHeadspaceTelemetry(): RawTelemetry {
 }
 
 export function makeWeatherTelemetry(): RawTelemetry {
-  const ts = 1700000000000;
+  const ts = MOCK_TS;
   return {
     'temperature': [{ value: '28.5', ts }],
     'humidity': [{ value: '75.0', ts }],
@@ -59,7 +62,7 @@ export function makeWeatherTelemetry(): RawTelemetry {
 }
 
 export function makeAerationTelemetry(): RawTelemetry {
-  const ts = 1700000000000;
+  const ts = MOCK_TS;
   return {
     'state': [{ value: 'on', ts }],
   };
@@ -74,8 +77,8 @@ export function makeAlarmResponse(): RawAlarmResponse {
         type: 'HIGH_TEMP',
         severity: 'CRITICAL',
         status: 'ACTIVE_UNACK',
-        createdTime: 1700000000000,
-        startTs: 1700000000000,
+        createdTime: MOCK_TS,
+        startTs: MOCK_TS,
         endTs: 0,
         originator: { id: 'silo-1', entityType: 'ASSET' },
         details: { silo: 'Silo 1', message: 'Temperature exceeded threshold' },

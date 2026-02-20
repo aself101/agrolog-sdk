@@ -15,6 +15,7 @@ function extractNumeric(raw: RawTelemetry, key: string): TimestampedValue<number
     return { value: null, ts: null };
   }
   const entry = entries[0];
+  if (!entry) return { value: null, ts: null };
   const parsed = Number(entry.value);
   return {
     value: Number.isNaN(parsed) ? null : parsed,
@@ -28,6 +29,7 @@ function extractString(raw: RawTelemetry, key: string): TimestampedValue<string>
     return { value: null, ts: null };
   }
   const entry = entries[0];
+  if (!entry) return { value: null, ts: null };
   return { value: entry.value, ts: entry.ts };
 }
 
@@ -36,9 +38,12 @@ function extractString(raw: RawTelemetry, key: string): TimestampedValue<string>
  * with extra whitespace (e.g., multi-line constant strings). Trim them.
  */
 function normalizeRawKeys(raw: RawTelemetry): RawTelemetry {
-  const normalized: Record<string, typeof raw[string]> = {};
+  const normalized: RawTelemetry = {};
   for (const key of Object.keys(raw)) {
-    normalized[key.trim()] = raw[key];
+    const value = raw[key];
+    if (value) {
+      normalized[key.trim()] = value;
+    }
   }
   return normalized;
 }

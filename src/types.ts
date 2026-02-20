@@ -19,7 +19,7 @@ export interface AgrologConfig {
  * All telemetry fields use this wrapper.
  * @typeParam T - The value type (typically `number` for sensor readings, `string` for states).
  */
-export interface TimestampedValue<T> {
+export interface TimestampedValue<T extends string | number | boolean> {
   /** The measured value, or `null` if the sensor has no reading. */
   readonly value: T | null;
   /** Unix timestamp in milliseconds when the value was recorded, or `null` if unavailable. */

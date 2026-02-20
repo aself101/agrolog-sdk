@@ -10,8 +10,6 @@ export const API_PATHS = {
     `/api/plugins/telemetry/ASSET/${assetId}/values/timeseries?keys=${keys}`,
   DEVICE_TELEMETRY: (deviceId: string, keys: string) =>
     `/api/plugins/telemetry/DEVICE/${deviceId}/values/timeseries?keys=${keys}`,
-  DEVICE_ATTRIBUTES: (deviceId: string, keys: string) =>
-    `/api/plugins/telemetry/DEVICE/${deviceId}/values/attributes/CLIENT_SCOPE?keys=${keys}`,
   ALARMS: (entityId: string, limit: number) =>
     `/api/alarm/ASSET/${entityId}?searchStatus=ACTIVE&limit=${limit}`,
 } as const;
