@@ -1,7 +1,6 @@
 import type { AgrologHttpClient } from '../http/http-client.js';
-import { API_PATHS, DISCOVERY_ASSET_TYPES, DISCOVERY_DEVICE_TYPES } from '../config/constants.js';
+import { API_PATHS, DISCOVERY_ASSET_TYPES, DISCOVERY_DEVICE_TYPES, ERROR_CODES } from '../config/constants.js';
 import { AgrologAPIError } from '../errors.js';
-import { ERROR_CODES } from '../config/constants.js';
 import type {
   RawAsset,
   RawDevice,

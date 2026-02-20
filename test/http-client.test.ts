@@ -50,7 +50,8 @@ describe('AgrologHttpClient', () => {
 
   describe('request (authenticated)', () => {
     beforeAll(() => {
-      client = new AgrologHttpClient(BASE_URL, 5000);
+      // Use 0ms backoff so retry tests complete instantly
+      client = new AgrologHttpClient(BASE_URL, 5000, false, 0);
       client.setAuth(
         async () => 'mock-token',
         async () => { /* no-op */ },

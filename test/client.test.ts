@@ -33,16 +33,18 @@ describe('AgrologClient', () => {
   afterEach(() => nock.cleanAll());
 
   it('throws if no credentials provided', () => {
-    // Clear env vars
     const origUser = process.env.AGROLOG_USERNAME;
     const origPass = process.env.AGROLOG_PASSWORD;
     delete process.env.AGROLOG_USERNAME;
     delete process.env.AGROLOG_PASSWORD;
 
-    expect(() => new AgrologClient({})).toThrow('username is required');
-
-    process.env.AGROLOG_USERNAME = origUser;
-    process.env.AGROLOG_PASSWORD = origPass;
+    try {
+      expect(() => new AgrologClient({})).toThrow('username is required');
+    } finally {
+      // Restore env vars regardless of test outcome
+      if (origUser !== undefined) process.env.AGROLOG_USERNAME = origUser;
+      if (origPass !== undefined) process.env.AGROLOG_PASSWORD = origPass;
+    }
   });
 
   describe('with credentials', () => {

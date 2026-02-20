@@ -81,25 +81,28 @@ export function parseSensorLineTelemetry(raw: RawTelemetry): SensorLineTelemetry
 }
 
 export function parseHeadspaceTelemetry(raw: RawTelemetry): HeadspaceTelemetry {
+  const data = normalizeRawKeys(raw);
   return {
-    temperature: extractNumeric(raw, 'temperature'),
-    dewpoint: extractNumeric(raw, 'dewpoint'),
-    moisture: extractNumeric(raw, 'moisture'),
-    co2Level: extractNumeric(raw, 'co2_level'),
-    pressure: extractNumeric(raw, 'pressure'),
+    temperature: extractNumeric(data, 'temperature'),
+    dewpoint: extractNumeric(data, 'dewpoint'),
+    moisture: extractNumeric(data, 'moisture'),
+    co2Level: extractNumeric(data, 'co2_level'),
+    pressure: extractNumeric(data, 'pressure'),
   };
 }
 
 export function parseWeatherTelemetry(raw: RawTelemetry): WeatherTelemetry {
+  const data = normalizeRawKeys(raw);
   return {
-    temperature: extractNumeric(raw, 'temperature'),
-    humidity: extractNumeric(raw, 'humidity'),
+    temperature: extractNumeric(data, 'temperature'),
+    humidity: extractNumeric(data, 'humidity'),
   };
 }
 
 export function parseAerationState(raw: RawTelemetry): AerationState {
+  const data = normalizeRawKeys(raw);
   return {
-    state: extractString(raw, 'state'),
+    state: extractString(data, 'state'),
   };
 }
 

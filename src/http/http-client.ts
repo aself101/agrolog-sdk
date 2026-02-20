@@ -6,11 +6,13 @@ import type { RequestOptions } from '../types.js';
 export class AgrologHttpClient {
   private readonly client: AxiosInstance;
   private readonly debug: boolean;
+  private readonly backoffBaseMs: number;
   private tokenGetter: (() => Promise<string>) | null = null;
   private tokenRefresher: (() => Promise<void>) | null = null;
 
-  constructor(baseUrl: string, timeout: number, debug = false) {
+  constructor(baseUrl: string, timeout: number, debug = false, backoffBaseMs = BACKOFF_BASE_MS) {
     this.debug = debug;
+    this.backoffBaseMs = backoffBaseMs;
     this.client = axios.create({
       baseURL: baseUrl,
       timeout,
@@ -69,7 +71,7 @@ export class AgrologHttpClient {
 
         // Retry on retryable errors
         if (lastError.isRetryable() && attempt < MAX_RETRIES) {
-          const delay = BACKOFF_BASE_MS * Math.pow(2, attempt);
+          const delay = this.backoffBaseMs * Math.pow(2, attempt);
           if (this.debug) {
             console.log(`[agrolog-sdk] Retrying in ${delay}ms...`);
           }
