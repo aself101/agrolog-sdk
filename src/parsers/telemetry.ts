@@ -9,6 +9,7 @@ import type {
   Alarm,
 } from '../types.js';
 
+/** Extracts a numeric value from raw telemetry, returning `{ value: null, ts: null }` for missing or unparseable entries. */
 function extractNumeric(raw: RawTelemetry, key: string): TimestampedValue<number> {
   const entries = raw[key];
   if (!entries || entries.length === 0) {
@@ -23,6 +24,7 @@ function extractNumeric(raw: RawTelemetry, key: string): TimestampedValue<number
   };
 }
 
+/** Extracts a string value from raw telemetry, returning `{ value: null, ts: null }` for missing entries. */
 function extractString(raw: RawTelemetry, key: string): TimestampedValue<string> {
   const entries = raw[key];
   if (!entries || entries.length === 0) {

@@ -85,6 +85,12 @@ describe('parseSensorLineTelemetry', () => {
     expect(result.sensor1DeltaTemperature).toEqual({ value: null, ts: null });
     expect(result.sensor1DeltaMoisture).toEqual({ value: null, ts: null });
   });
+
+  it('handles entries with empty arrays gracefully', () => {
+    const raw = { 'temperature-1': [] };
+    const result = parseSensorLineTelemetry(raw);
+    expect(result.sensor1Temperature).toEqual({ value: null, ts: null });
+  });
 });
 
 describe('parseHeadspaceTelemetry', () => {

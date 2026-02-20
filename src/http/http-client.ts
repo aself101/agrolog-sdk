@@ -37,19 +37,19 @@ export class AgrologHttpClient {
   private readonly baseUrl: string;
   private readonly timeout: number;
   private readonly defaultHeaders: Record<string, string>;
-  private readonly debug: boolean;
+  private readonly log: ((message: string) => void) | null;
   private readonly backoffBaseMs: number;
   private tokenGetter: (() => Promise<string>) | null = null;
   private tokenRefresher: (() => Promise<void>) | null = null;
 
-  constructor(baseUrl: string, timeout: number, debug = false, backoffBaseMs = BACKOFF_BASE_MS) {
+  constructor(baseUrl: string, timeout: number, log: ((message: string) => void) | null = null, backoffBaseMs = BACKOFF_BASE_MS) {
     this.baseUrl = baseUrl;
     this.timeout = timeout;
     this.defaultHeaders = {
       'Content-Type': 'application/json',
       'Accept': 'application/json',
     };
-    this.debug = debug;
+    this.log = log;
     this.backoffBaseMs = backoffBaseMs;
   }
 
@@ -74,9 +74,8 @@ export class AgrologHttpClient {
       try {
         const token = await this.getToken();
 
-        if (this.debug) {
-          console.log(`[agrolog-sdk] ${method.toUpperCase()} ${endpoint} (attempt ${attempt + 1})`);
-        }
+        // Note: Log messages include endpoint paths but never credentials or tokens.
+        this.log?.(`[agrolog-sdk] ${method.toUpperCase()} ${endpoint} (attempt ${attempt + 1})`);
 
         return await this.doFetch<T>(
           method,
@@ -91,9 +90,7 @@ export class AgrologHttpClient {
 
         // Only refresh auth on the first attempt to prevent infinite refresh loops
         if (lastError.isAuthError() && attempt === 0 && this.tokenRefresher) {
-          if (this.debug) {
-            console.log('[agrolog-sdk] Auth error, refreshing token...');
-          }
+          this.log?.('[agrolog-sdk] Auth error, refreshing token...');
           await this.tokenRefresher();
           continue;
         }
@@ -102,9 +99,7 @@ export class AgrologHttpClient {
         if (lastError.isRetryable() && attempt < MAX_RETRIES) {
           const baseDelay = this.backoffBaseMs * (2 ** attempt);
           const delay = baseDelay > 0 ? baseDelay * (0.75 + Math.random() * 0.5) : 0;
-          if (this.debug) {
-            console.log(`[agrolog-sdk] Retrying in ${delay}ms...`);
-          }
+          this.log?.(`[agrolog-sdk] Retrying in ${delay}ms...`);
           await sleep(delay);
           continue;
         }
@@ -174,7 +169,14 @@ export class AgrologHttpClient {
         throw new FetchHttpError(errorMessage ?? response.statusText, response.status, endpoint);
       }
 
-      return await response.json() as T;
+      // SAFETY: Cast to T without runtime validation — the ThingsBoard API always
+      // returns JSON for successful responses. Runtime schema validation is deferred
+      // to consumers via the typed interfaces (SiloTelemetry, etc.).
+      try {
+        return await response.json() as T;
+      } catch {
+        throw new FetchHttpError('Response body is not valid JSON', response.status, endpoint);
+      }
     } catch (error) {
       if (error instanceof FetchHttpError) throw error;
 
@@ -203,6 +205,7 @@ export class AgrologHttpClient {
     return this.tokenGetter();
   }
 
+  /** Maps internal fetch sentinel errors (and unknown errors) to typed {@link AgrologAPIError} instances. */
   private transformError(error: unknown, endpoint: string): AgrologAPIError {
     if (error instanceof AgrologAPIError) return error;
 

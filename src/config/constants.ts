@@ -1,17 +1,29 @@
+// ─── Entity ID Validation ────────────────────────────────────────
+
+const SAFE_ID_PATTERN = /^[a-zA-Z0-9_-]+$/;
+
+/** Validates that an entity ID is safe for URL path interpolation. */
+function validateId(id: string): string {
+  if (!SAFE_ID_PATTERN.test(id)) {
+    throw new TypeError(`Invalid entity ID format: "${id}". Expected alphanumeric, hyphens, or underscores.`);
+  }
+  return id;
+}
+
 // ─── API Path Templates ──────────────────────────────────────────
 
 export const API_PATHS = {
   LOGIN: '/api/auth/login',
   USER: '/api/auth/user',
-  CUSTOMER: (customerId: string) => `/api/customer/${customerId}`,
+  CUSTOMER: (customerId: string) => `/api/customer/${validateId(customerId)}`,
   ASSETS: '/api/assets',
   DEVICES: '/api/devices',
   ASSET_TELEMETRY: (assetId: string, keys: string) =>
-    `/api/plugins/telemetry/ASSET/${assetId}/values/timeseries?keys=${keys}`,
+    `/api/plugins/telemetry/ASSET/${validateId(assetId)}/values/timeseries?keys=${keys}`,
   DEVICE_TELEMETRY: (deviceId: string, keys: string) =>
-    `/api/plugins/telemetry/DEVICE/${deviceId}/values/timeseries?keys=${keys}`,
+    `/api/plugins/telemetry/DEVICE/${validateId(deviceId)}/values/timeseries?keys=${keys}`,
   ALARMS: (entityId: string, limit: number) =>
-    `/api/alarm/ASSET/${entityId}?searchStatus=ACTIVE&limit=${limit}`,
+    `/api/alarm/ASSET/${validateId(entityId)}?searchStatus=ACTIVE&limit=${limit}`,
 } as const;
 
 // ─── Telemetry Key Strings ───────────────────────────────────────
@@ -78,9 +90,11 @@ export const MAX_RETRIES = 3;
 
 export const ERROR_CODES = {
   AUTH_FAILED: 'AUTH_FAILED',
+  /** Reserved for future use — kept for consumers who check against this code. */
   TOKEN_EXPIRED: 'TOKEN_EXPIRED',
   NOT_CONNECTED: 'NOT_CONNECTED',
   DISCOVERY_FAILED: 'DISCOVERY_FAILED',
+  /** Reserved for future use — kept for consumers who check against this code. */
   TELEMETRY_FAILED: 'TELEMETRY_FAILED',
   REQUEST_FAILED: 'REQUEST_FAILED',
   TIMEOUT: 'TIMEOUT',
@@ -90,4 +104,9 @@ export const ERROR_CODES = {
 
 // ─── Default Base URL ────────────────────────────────────────────
 
-export const DEFAULT_BASE_URL = 'http://console.agrolog.io:8080';
+/**
+ * Default ThingsBoard URL. Uses HTTPS for secure credential transmission.
+ * Override with `baseUrl` config or `AGROLOG_THINGSBOARD_URL` env var if
+ * your ThingsBoard instance uses plain HTTP.
+ */
+export const DEFAULT_BASE_URL = 'https://console.agrolog.io';

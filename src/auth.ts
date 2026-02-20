@@ -1,5 +1,6 @@
 import type { AgrologHttpClient } from './http/http-client.js';
-import { API_PATHS, TOKEN_TTL_MS, TOKEN_REFRESH_BUFFER_MS } from './config/constants.js';
+import { API_PATHS, TOKEN_TTL_MS, TOKEN_REFRESH_BUFFER_MS, ERROR_CODES } from './config/constants.js';
+import { AgrologAPIError } from './errors.js';
 
 interface LoginResponse {
   readonly token: string;
@@ -52,6 +53,13 @@ export class TokenManager {
       API_PATHS.LOGIN,
       { username: this.username, password: this.password },
     );
+
+    if (!response.token || typeof response.token !== 'string') {
+      throw new AgrologAPIError(
+        'Login response missing valid token',
+        ERROR_CODES.AUTH_FAILED,
+      );
+    }
 
     this.token = response.token;
     this.tokenAcquiredAt = Date.now();

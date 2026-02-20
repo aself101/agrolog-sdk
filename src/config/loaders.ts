@@ -13,7 +13,7 @@ export interface ResolvedConfig {
   readonly password: string;
   readonly baseUrl: string;
   readonly timeout: number;
-  readonly debug: boolean;
+  readonly log: ((message: string) => void) | null;
 }
 
 export function loadConfig(config?: AgrologConfig): ResolvedConfig {
@@ -27,7 +27,7 @@ export function loadConfig(config?: AgrologConfig): ResolvedConfig {
   const password = config?.password ?? process.env.AGROLOG_PASSWORD;
   const baseUrl = config?.baseUrl ?? process.env.AGROLOG_THINGSBOARD_URL ?? DEFAULT_BASE_URL;
   const timeout = config?.timeout ?? DEFAULT_TIMEOUT;
-  const debug = config?.debug ?? false;
+  const log = config?.logger ?? (config?.debug ? console.log : null);
 
   if (!username) {
     throw new AgrologAPIError(
@@ -43,5 +43,5 @@ export function loadConfig(config?: AgrologConfig): ResolvedConfig {
     );
   }
 
-  return { username, password, baseUrl, timeout, debug };
+  return { username, password, baseUrl, timeout, log };
 }

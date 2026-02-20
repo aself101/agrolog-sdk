@@ -51,7 +51,7 @@ describe('AgrologHttpClient', () => {
   describe('request (authenticated)', () => {
     beforeAll(() => {
       // Use 0ms backoff so retry tests complete instantly
-      client = new AgrologHttpClient(BASE_URL, 5000, false, 0);
+      client = new AgrologHttpClient(BASE_URL, 5000, null, 0);
       client.setAuth(
         async () => 'mock-token',
         async () => { /* no-op */ },
@@ -83,7 +83,7 @@ describe('AgrologHttpClient', () => {
 
     it('refreshes token on 401 and retries the request', async () => {
       let tokenCallCount = 0;
-      const retryClient = new AgrologHttpClient(BASE_URL, 5000, false, 0);
+      const retryClient = new AgrologHttpClient(BASE_URL, 5000, null, 0);
       retryClient.setAuth(
         async () => {
           tokenCallCount++;
@@ -106,7 +106,7 @@ describe('AgrologHttpClient', () => {
     });
 
     it('does not retry auth refresh on second 401', async () => {
-      const retryClient = new AgrologHttpClient(BASE_URL, 5000, false, 0);
+      const retryClient = new AgrologHttpClient(BASE_URL, 5000, null, 0);
       retryClient.setAuth(
         async () => 'bad-token',
         async () => { /* refresh doesn't help */ },
@@ -123,7 +123,7 @@ describe('AgrologHttpClient', () => {
     });
 
     it('maps timeout to AgrologAPIError with TIMEOUT code', async () => {
-      const timeoutClient = new AgrologHttpClient(BASE_URL, 1, false, 0);
+      const timeoutClient = new AgrologHttpClient(BASE_URL, 1, null, 0);
       timeoutClient.setAuth(
         async () => 'mock-token',
         async () => {},
@@ -142,6 +142,25 @@ describe('AgrologHttpClient', () => {
       const error = await client.request('GET', '/api/down').catch((e: unknown) => e) as AgrologAPIError;
       expect(error).toBeInstanceOf(AgrologAPIError);
       expect(error.code).toBe('NETWORK_ERROR');
+    });
+
+    it('throws when 200 response body is not valid JSON', async () => {
+      nock(BASE_URL).get('/api/text').reply(200, 'not-json', { 'Content-Type': 'text/plain' });
+
+      const error = await client.request('GET', '/api/text').catch((e: unknown) => e) as AgrologAPIError;
+      expect(error).toBeInstanceOf(AgrologAPIError);
+    });
+
+    it('does not send Content-Type header on GET requests', async () => {
+      nock(BASE_URL, {
+        badheaders: ['Content-Type'],
+        reqheaders: { 'X-Authorization': 'Bearer mock-token' },
+      })
+        .get('/api/auth/user')
+        .reply(200, { customerId: { id: 'cust-1' } });
+
+      const result = await client.request<{ customerId: { id: string } }>('GET', '/api/auth/user');
+      expect(result.customerId.id).toBe('cust-1');
     });
   });
 

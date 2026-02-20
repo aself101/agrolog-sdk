@@ -2,6 +2,8 @@ import type { RawTelemetry, RawAlarmResponse, RawAsset, RawDevice } from '../src
 import { AgrologHttpClient } from '../src/http/http-client.js';
 
 // ─── Shared Test Infrastructure ─────────────────────────────────
+// Note: nock v14 uses @mswjs/interceptors to intercept native fetch.
+// If fetch interception breaks after a nock upgrade, check compatibility.
 
 export const TEST_BASE_URL = 'http://localhost:8080';
 

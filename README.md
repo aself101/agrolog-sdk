@@ -1,5 +1,7 @@
 # agrolog-sdk
 
+> v1.0.0
+
 TypeScript SDK for the Agrolog IoT ThingsBoard API. Provides typed, authenticated access to silo telemetry, sensor readings, weather stations, aeration systems, and alarms.
 
 ## Installation
@@ -8,7 +10,7 @@ TypeScript SDK for the Agrolog IoT ThingsBoard API. Provides typed, authenticate
 npm install agrolog-sdk
 ```
 
-Requires Node.js ≥ 18.
+Requires Node.js >= 18.
 
 ## Quick Start
 
@@ -18,7 +20,7 @@ import { AgrologClient } from 'agrolog-sdk';
 const client = new AgrologClient({
   username: 'user@example.com',
   password: 'secret',
-  baseUrl: 'http://console.agrolog.io:8080',
+  baseUrl: 'https://console.agrolog.io',
 });
 
 // Discover topology (must call first)
@@ -48,21 +50,34 @@ Credentials are resolved in priority order:
 const client = new AgrologClient({
   username: 'user@example.com',
   password: 'secret',
-  baseUrl: 'http://console.agrolog.io:8080',
+  baseUrl: 'https://console.agrolog.io',
   timeout: 30000,  // ms, default 30s
-  debug: false,    // log HTTP requests, auth refreshes, and retries to console
+  logger: (msg) => console.log(msg),  // optional debug logging callback
 });
 
 // From environment / .env file
 const client = new AgrologClient();
 ```
 
+> **Security note:** The default `baseUrl` uses HTTPS. If your ThingsBoard instance
+> uses plain HTTP, set `baseUrl` explicitly. Credentials are sent over the network
+> during login — avoid unencrypted connections in production.
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `username` | `string` | env `AGROLOG_USERNAME` | ThingsBoard login |
+| `password` | `string` | env `AGROLOG_PASSWORD` | ThingsBoard password |
+| `baseUrl` | `string` | `https://console.agrolog.io` | ThingsBoard base URL |
+| `timeout` | `number` | `30000` | HTTP timeout (ms) |
+| `logger` | `(msg: string) => void` | — | Debug log callback. Log messages include request paths and retry info but never credentials or tokens. |
+| `debug` | `boolean` | — | **Deprecated.** When `true` and no `logger` set, uses `console.log`. Prefer `logger`. |
+
 **.env file example:**
 
 ```env
 AGROLOG_USERNAME=user@example.com
 AGROLOG_PASSWORD=secret
-AGROLOG_THINGSBOARD_URL=http://console.agrolog.io:8080
+AGROLOG_THINGSBOARD_URL=https://console.agrolog.io
 ```
 
 ## API Reference
@@ -125,7 +140,7 @@ t.avgTemperature.ts   // number | null
 
 ### `client.getSensorLineTelemetry(sensorDeviceId: string): Promise<SensorLineTelemetry>`
 
-Fetches per-sensor readings for a temperature/moisture sensor device (sensors 1–3).
+Fetches per-sensor readings for a temperature/moisture sensor device (sensors 1-3).
 
 ```ts
 const t = await client.getSensorLineTelemetry(deviceId);
@@ -174,13 +189,13 @@ aeration.state.ts     // Unix ms timestamp
 
 ### `client.getAlarms(entityId: string, limit?: number): Promise<Alarm[]>`
 
-Fetches active alarms for an entity (silo, aerator, etc.). Default limit: 10.
+Fetches active alarms for an entity (silo, aerator, etc.). Default limit: 10, max: 1000.
 
 ```ts
 const alarms = await client.getAlarms(topology.silos[0].assetId, 25);
 alarms.forEach(a => {
   console.log(`${a.name} [${a.severity}]: ${a.status}`);
-  // a.alarmId, a.type, a.createdTime, a.startTs, a.endTs, a.details
+  // a.alarmId, a.type, a.createdTime, a.startTs, a.endTs, a.originatorId, a.details
 });
 ```
 
@@ -195,7 +210,7 @@ devices.forEach(d => console.log(`${d.name} (${d.type}): ${d.deviceId}`));
 
 ### `client.getAllSiloTelemetry(): Promise<Map<string, SiloTelemetry>>`
 
-Fetches telemetry for all silos in parallel.
+Fetches telemetry for all silos in parallel. Uses `Promise.allSettled` — partial results are returned if some silos fail. Throws only if all silos fail.
 
 ```ts
 const all = await client.getAllSiloTelemetry();
@@ -238,17 +253,17 @@ try {
 }
 ```
 
-**Error codes** (from `agrolog-sdk/config` → `ERROR_CODES`):
+**Error codes** (from `agrolog-sdk/config` -> `ERROR_CODES`):
 
 | Code | When thrown |
 |------|-------------|
 | `NOT_CONNECTED` | Data method called before `connect()` |
 | `AUTH_FAILED` | Login failed (bad credentials) |
-| `TOKEN_EXPIRED` | Token expired and could not be refreshed |
+| `TOKEN_EXPIRED` | Token expired and could not be refreshed (reserved) |
 | `DISCOVERY_FAILED` | Site, weather station, or device not found |
 | `REQUEST_FAILED` | HTTP request failed after retries |
-| `SERVICE_UNAVAILABLE` | Server returned 502/503/504 |
-| `TELEMETRY_FAILED` | Telemetry request or parse failed |
+| `SERVICE_UNAVAILABLE` | Server returned 5xx |
+| `TELEMETRY_FAILED` | Telemetry request or parse failed (reserved) |
 | `TIMEOUT` | Request timed out |
 | `NETWORK_ERROR` | Network-level failure (no response) |
 
@@ -257,7 +272,7 @@ try {
 All telemetry fields return a `TimestampedValue<T>`:
 
 ```ts
-interface TimestampedValue<T> {
+interface TimestampedValue<T extends string | number | boolean> {
   value: T | null;  // null if the sensor has no reading
   ts: number | null; // Unix timestamp in milliseconds
 }
@@ -270,11 +285,30 @@ All temperature values are **raw Celsius** — no conversion is applied. If `sen
 ```ts
 // Primary imports (recommended)
 import { AgrologClient, AgrologAPIError } from 'agrolog-sdk';
-import type { SiloTelemetry, WeatherTelemetry, Alarm } from 'agrolog-sdk/types';
+
+// All public types
+import type {
+  AgrologConfig,
+  TimestampedValue,
+  SiteTopology,
+  SiloAsset,
+  WeatherStationAsset,
+  AeratorAsset,
+  SiloDevice,
+  SiloDevices,
+  SiloTelemetry,
+  SensorLineTelemetry,
+  HeadspaceTelemetry,
+  WeatherTelemetry,
+  AerationState,
+  Alarm,
+} from 'agrolog-sdk/types';
+
+// Constants and error codes
 import { ERROR_CODES, DEFAULT_BASE_URL, DEFAULT_TIMEOUT } from 'agrolog-sdk/config';
 
-// Alternative: import error class from its dedicated path
-// import { AgrologAPIError } from 'agrolog-sdk/errors';
+// Error class from dedicated path
+import { AgrologAPIError } from 'agrolog-sdk/errors';
 ```
 
 ## License

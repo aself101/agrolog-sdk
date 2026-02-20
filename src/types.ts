@@ -8,8 +8,10 @@ export interface AgrologConfig {
   readonly baseUrl?: string;
   /** HTTP request timeout in milliseconds. Default: 30000. */
   readonly timeout?: number;
-  /** Log HTTP requests to console. Default: false. */
+  /** @deprecated Use `logger` instead. When true and no `logger` is set, uses `console.log`. */
   readonly debug?: boolean;
+  /** Optional callback for debug output. Receives log messages for HTTP requests, retries, and auth refreshes. */
+  readonly logger?: (message: string) => void;
 }
 
 // ─── Generic timestamped value ───────────────────────────────────

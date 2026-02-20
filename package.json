@@ -2,6 +2,19 @@
   "name": "agrolog-sdk",
   "version": "1.0.0",
   "description": "TypeScript SDK for the Agrolog IoT ThingsBoard API - authentication, asset discovery, and telemetry fetching",
+  "license": "MIT",
+  "keywords": [
+    "agrolog",
+    "thingsboard",
+    "iot",
+    "telemetry",
+    "sdk",
+    "typescript"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/aself101/agrolog-sdk.git"
+  },
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "type": "module",
@@ -39,6 +52,9 @@
   },
   "dependencies": {
     "dotenv": "^16.3.1"
+  },
+  "overrides": {
+    "minimatch": "^10.2.1"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

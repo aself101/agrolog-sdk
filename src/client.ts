@@ -58,7 +58,7 @@ export class AgrologClient {
   constructor(config?: AgrologConfig) {
     const resolved = loadConfig(config);
 
-    this.httpClient = new AgrologHttpClient(resolved.baseUrl, resolved.timeout, resolved.debug);
+    this.httpClient = new AgrologHttpClient(resolved.baseUrl, resolved.timeout, resolved.log);
     this.tokenManager = new TokenManager(resolved.username, resolved.password);
 
     // Wire auth into HTTP client
@@ -203,13 +203,29 @@ export class AgrologClient {
    */
   async getAllSiloTelemetry(): Promise<Map<string, SiloTelemetry>> {
     const topology = this.connectedTopology();
-    const entries = await Promise.all(
+    const results = await Promise.allSettled(
       topology.silos.map(async silo => {
         const telemetry = await getSiloTelemetry(this.httpClient, silo.assetId);
         return [silo.assetId, telemetry] as const;
       }),
     );
-    return new Map(entries);
+
+    const map = new Map<string, SiloTelemetry>();
+    const errors: Error[] = [];
+
+    for (const result of results) {
+      if (result.status === 'fulfilled') {
+        map.set(result.value[0], result.value[1]);
+      } else {
+        errors.push(result.reason instanceof Error ? result.reason : new Error(String(result.reason)));
+      }
+    }
+
+    if (errors.length > 0 && map.size === 0) {
+      throw errors[0]; // All failed — throw the first error
+    }
+
+    return map;
   }
 
   // ─── Auth ────────────────────────────────────────────────────

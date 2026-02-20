@@ -5,15 +5,17 @@ import type { RawAlarmResponse } from '../types-internal.js';
 import type { Alarm } from '../types.js';
 
 const DEFAULT_ALARM_LIMIT = 10;
+const MAX_ALARM_LIMIT = 1000;
 
 export async function getAlarms(
   client: AgrologHttpClient,
   entityId: string,
   limit = DEFAULT_ALARM_LIMIT,
 ): Promise<Alarm[]> {
+  const clampedLimit = Math.max(1, Math.min(Math.floor(limit), MAX_ALARM_LIMIT));
   const raw = await client.request<RawAlarmResponse>(
     'GET',
-    API_PATHS.ALARMS(entityId, limit),
+    API_PATHS.ALARMS(entityId, clampedLimit),
   );
   return parseAlarms(raw);
 }

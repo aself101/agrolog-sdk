@@ -10,6 +10,12 @@ describe('getWeatherTelemetry', () => {
   afterAll(() => nock.enableNetConnect());
   afterEach(() => nock.cleanAll());
 
+  it('throws AgrologAPIError when weather device discovery fails', async () => {
+    nock(TEST_BASE_URL).post('/api/devices').reply(200, []);
+
+    await expect(getWeatherTelemetry(client, 'ws-1')).rejects.toThrow('No weather');
+  });
+
   it('discovers weather device then fetches telemetry', async () => {
     nock(TEST_BASE_URL).post('/api/devices').reply(200, makeWeatherDevicesResponse());
     nock(TEST_BASE_URL)

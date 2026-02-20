@@ -15,7 +15,7 @@ describe('loadConfig', () => {
     expect(config.password).toBe('test-password');
     expect(config.baseUrl).toBe('http://localhost:8080');
     expect(config.timeout).toBe(DEFAULT_TIMEOUT);
-    expect(config.debug).toBe(false);
+    expect(config.log).toBeNull();
   });
 
   it('prefers config object over env vars', () => {

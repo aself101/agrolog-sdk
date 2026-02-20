@@ -216,16 +216,16 @@ describe('AgrologClient', () => {
       await freshClient.connect();
     });
 
-    it('clears and re-acquires token', async () => {
-      // Mock login for refresh, then a telemetry call to verify the new token is used
+    it('re-acquires token via login', async () => {
       const loginScope = nock(BASE_URL)
         .post('/api/auth/login')
         .reply(200, { token: 'new-jwt-token', refreshToken: 'new-r' });
 
       await freshClient.refreshAuth();
       expect(loginScope.isDone()).toBe(true);
+    });
 
-      // Verify the refreshed token is used on the next request
+    it('uses refreshed token on subsequent requests', async () => {
       nock(BASE_URL, { reqheaders: { 'X-Authorization': 'Bearer new-jwt-token' } })
         .get(/\/api\/plugins\/telemetry\/ASSET\/silo-1\/values\/timeseries/)
         .reply(200, makeSiloTelemetry());
