@@ -184,12 +184,12 @@ alarms.forEach(a => {
 });
 ```
 
-### `client.getSiloDevices(siloId: string): Promise<SiloDevices>`
+### `client.discoverSiloDevices(siloId: string): Promise<SiloDevices>`
 
 Discovers all devices within a silo (temperature sensors, moisture sensors, headspace sensor, level indicator).
 
 ```ts
-const { siloId, devices } = await client.getSiloDevices(topology.silos[0].assetId);
+const { siloId, devices } = await client.discoverSiloDevices(topology.silos[0].assetId);
 devices.forEach(d => console.log(`${d.name} (${d.type}): ${d.deviceId}`));
 ```
 

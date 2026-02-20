@@ -1,1 +1,1 @@
-export { discoverTopology, discoverSiloDevices, discoverWeatherDevice } from './discovery.js';
+export { discoverTopology, discoverSiloDevices } from './discovery.js';

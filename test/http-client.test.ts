@@ -112,12 +112,14 @@ describe('AgrologHttpClient', () => {
         async () => { /* refresh doesn't help */ },
       );
 
-      // All attempts return 401
-      nock(BASE_URL).get('/api/data').times(4).reply(401, { message: 'Unauthorized' });
+      // Exactly 2 attempts: initial 401 triggers refresh, second 401 stops (no second refresh)
+      const scope = nock(BASE_URL).get('/api/data').times(2).reply(401, { message: 'Unauthorized' });
 
       await expect(
         retryClient.request('GET', '/api/data'),
       ).rejects.toThrow('Authentication failed');
+
+      expect(scope.isDone()).toBe(true);
     });
 
     it('maps timeout to AgrologAPIError with TIMEOUT code', async () => {

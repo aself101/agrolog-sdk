@@ -143,10 +143,10 @@ describe('AgrologClient', () => {
       expect(results.get('silo-1')?.avgTemperature.value).toBe(20.3);
     });
 
-    it('getSiloDevices returns devices', async () => {
+    it('discoverSiloDevices returns devices', async () => {
       nock(BASE_URL).post('/api/devices').reply(200, makeSiloDevicesResponse());
 
-      const result = await client.getSiloDevices('silo-1');
+      const result = await client.discoverSiloDevices('silo-1');
       expect(result.devices).toHaveLength(4);
     });
 
@@ -201,13 +201,28 @@ describe('AgrologClient', () => {
       expect(result[0].severity).toBe('CRITICAL');
     });
 
-    it('refreshAuth clears and re-acquires token', async () => {
+  });
+
+  describe('refreshAuth (isolated to avoid token state mutation)', () => {
+    let freshClient: AgrologClient;
+
+    beforeAll(async () => {
+      freshClient = new AgrologClient({
+        username: 'test@example.com',
+        password: 'password',
+        baseUrl: BASE_URL,
+      });
+      setupConnectMocks();
+      await freshClient.connect();
+    });
+
+    it('clears and re-acquires token', async () => {
       // Mock login for refresh, then a telemetry call to verify the new token is used
       const loginScope = nock(BASE_URL)
         .post('/api/auth/login')
         .reply(200, { token: 'new-jwt-token', refreshToken: 'new-r' });
 
-      await client.refreshAuth();
+      await freshClient.refreshAuth();
       expect(loginScope.isDone()).toBe(true);
 
       // Verify the refreshed token is used on the next request
@@ -215,7 +230,7 @@ describe('AgrologClient', () => {
         .get(/\/api\/plugins\/telemetry\/ASSET\/silo-1\/values\/timeseries/)
         .reply(200, makeSiloTelemetry());
 
-      const result = await client.getSiloTelemetry('silo-1');
+      const result = await freshClient.getSiloTelemetry('silo-1');
       expect(result.avgTemperature.value).toBe(20.3);
     });
   });

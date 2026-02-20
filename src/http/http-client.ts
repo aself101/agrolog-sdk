@@ -61,6 +61,7 @@ export class AgrologHttpClient {
     this.tokenRefresher = tokenRefresher;
   }
 
+  /** @typeParam T - Expected JSON response shape (cast, not validated at runtime) */
   async request<T>(
     method: HttpMethod,
     endpoint: string,
@@ -115,6 +116,7 @@ export class AgrologHttpClient {
     throw lastError ?? new AgrologAPIError('Request failed after retries', ERROR_CODES.REQUEST_FAILED);
   }
 
+  /** @typeParam T - Expected JSON response shape (cast, not validated at runtime) */
   async requestNoAuth<T>(
     method: HttpMethod,
     endpoint: string,

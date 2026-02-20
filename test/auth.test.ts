@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { TokenManager } from '../src/auth.js';
 import { TOKEN_TTL_MS, TOKEN_REFRESH_BUFFER_MS } from '../src/config/constants.js';
 import type { AgrologHttpClient } from '../src/http/http-client.js';

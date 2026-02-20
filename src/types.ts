@@ -38,6 +38,7 @@ interface AssetRecord {
   readonly type: string;
 }
 
+/* eslint-disable @typescript-eslint/no-empty-object-type -- Semantic subtypes for distinct asset kinds */
 /** A grain storage silo asset discovered during topology resolution. */
 export interface SiloAsset extends AssetRecord {}
 
@@ -46,6 +47,7 @@ export interface WeatherStationAsset extends AssetRecord {}
 
 /** An aeration system asset discovered during topology resolution. */
 export interface AeratorAsset extends AssetRecord {}
+/* eslint-enable @typescript-eslint/no-empty-object-type */
 
 /**
  * The full site topology returned by {@link AgrologClient.connect}.

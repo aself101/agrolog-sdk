@@ -7,6 +7,7 @@ import { DEFAULT_BASE_URL, DEFAULT_TIMEOUT, ERROR_CODES } from './constants.js';
 // dotenv.config() does not override existing env vars, so this is safe to call once.
 let dotenvLoaded = false;
 
+/** @internal Not part of the public API — use `AgrologConfig` instead. */
 export interface ResolvedConfig {
   readonly username: string;
   readonly password: string;

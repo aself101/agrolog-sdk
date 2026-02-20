@@ -189,7 +189,7 @@ export class AgrologClient {
    * @param siloId - Asset ID of the silo
    * @returns Discovered devices (temperature sensors, moisture sensors, headspace, level indicator)
    */
-  async getSiloDevices(siloId: string): Promise<SiloDevices> {
+  async discoverSiloDevices(siloId: string): Promise<SiloDevices> {
     this.connectedTopology();
     return discoverSiloDevices(this.httpClient, siloId);
   }
