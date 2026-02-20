@@ -1,4 +1,4 @@
-import type { RawTelemetry, RawAlarmResponse, RawAsset, RawDevice } from '../src/types.js';
+import type { RawTelemetry, RawAlarmResponse, RawAsset, RawDevice } from '../src/types-internal.js';
 
 // ─── Mock Telemetry Factories ────────────────────────────────────
 

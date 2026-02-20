@@ -4,6 +4,10 @@ import { AgrologClient } from '../src/client.js';
 import { AgrologAPIError } from '../src/errors.js';
 import {
   makeSiloTelemetry,
+  makeSensorLineTelemetry,
+  makeHeadspaceTelemetry,
+  makeAerationTelemetry,
+  makeAlarmResponse,
   makeRawAssets,
   makeSiloDevicesResponse,
   makeWeatherDevicesResponse,
@@ -33,18 +37,8 @@ describe('AgrologClient', () => {
   afterEach(() => nock.cleanAll());
 
   it('throws if no credentials provided', () => {
-    const origUser = process.env.AGROLOG_USERNAME;
-    const origPass = process.env.AGROLOG_PASSWORD;
-    delete process.env.AGROLOG_USERNAME;
-    delete process.env.AGROLOG_PASSWORD;
-
-    try {
-      expect(() => new AgrologClient({})).toThrow('username is required');
-    } finally {
-      // Restore env vars regardless of test outcome
-      if (origUser !== undefined) process.env.AGROLOG_USERNAME = origUser;
-      if (origPass !== undefined) process.env.AGROLOG_PASSWORD = origPass;
-    }
+    // Pass explicit empty strings to bypass any env/dotenv fallback
+    expect(() => new AgrologClient({ username: '', password: '' })).toThrow('username is required');
   });
 
   describe('with credentials', () => {
@@ -128,6 +122,57 @@ describe('AgrologClient', () => {
 
       const result = await client.getWeatherTelemetry();
       expect(result.temperature.value).toBe(28.5);
+    });
+
+    it('getSensorLineTelemetry fetches sensor data', async () => {
+      nock(BASE_URL)
+        .get(/\/api\/plugins\/telemetry\/DEVICE\/sensor-1\/values\/timeseries/)
+        .reply(200, makeSensorLineTelemetry());
+
+      const result = await client.getSensorLineTelemetry('sensor-1');
+      expect(result.sensor1Temperature.value).toBe(21.0);
+      expect(result.sensor3Temperature.value).toBe(22.0);
+    });
+
+    it('getHeadspaceTelemetry discovers device then fetches', async () => {
+      nock(BASE_URL).post('/api/devices').reply(200, makeSiloDevicesResponse());
+      nock(BASE_URL)
+        .get(/\/api\/plugins\/telemetry\/DEVICE\/headspace-1\/values\/timeseries/)
+        .reply(200, makeHeadspaceTelemetry());
+
+      const result = await client.getHeadspaceTelemetry('silo-1');
+      expect(result.temperature.value).toBe(25.0);
+      expect(result.co2Level.value).toBe(800);
+    });
+
+    it('getAerationState fetches aeration data', async () => {
+      nock(BASE_URL)
+        .get(/\/api\/plugins\/telemetry\/ASSET\/aer-1\/values\/timeseries/)
+        .reply(200, makeAerationTelemetry());
+
+      const result = await client.getAerationState('aer-1');
+      expect(result.state.value).toBe('on');
+    });
+
+    it('getAlarms fetches alarm list', async () => {
+      nock(BASE_URL)
+        .get(/\/api\/alarm\/ASSET\/silo-1/)
+        .reply(200, makeAlarmResponse());
+
+      const result = await client.getAlarms('silo-1');
+      expect(result).toHaveLength(1);
+      expect(result[0].name).toBe('High Temperature');
+      expect(result[0].severity).toBe('CRITICAL');
+    });
+
+    it('refreshAuth clears and re-acquires token', async () => {
+      // Mock the login endpoint for token refresh
+      nock(BASE_URL)
+        .post('/api/auth/login')
+        .reply(200, { token: 'new-jwt-token', refreshToken: 'new-r' });
+
+      // Should not throw
+      await client.refreshAuth();
     });
   });
 });

@@ -1,7 +1,6 @@
+import type { RawTelemetry, RawAlarmResponse } from '../types-internal.js';
 import type {
   TimestampedValue,
-  RawTelemetry,
-  RawAlarmResponse,
   SiloTelemetry,
   SensorLineTelemetry,
   HeadspaceTelemetry,

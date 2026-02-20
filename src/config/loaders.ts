@@ -2,8 +2,7 @@ import dotenv from 'dotenv';
 import type { AgrologConfig } from '../types.js';
 import { DEFAULT_BASE_URL, DEFAULT_TIMEOUT } from './constants.js';
 
-// Load .env once at module initialization (does not override existing env vars)
-dotenv.config();
+let dotenvLoaded = false;
 
 export interface ResolvedConfig {
   readonly username: string;
@@ -14,6 +13,12 @@ export interface ResolvedConfig {
 }
 
 export function loadConfig(config?: AgrologConfig): ResolvedConfig {
+  // Load .env once on first call (lazy, does not override existing env vars)
+  if (!dotenvLoaded) {
+    dotenv.config();
+    dotenvLoaded = true;
+  }
+
   const username = config?.username ?? process.env.AGROLOG_USERNAME;
   const password = config?.password ?? process.env.AGROLOG_PASSWORD;
   const baseUrl = config?.baseUrl ?? process.env.AGROLOG_THINGSBOARD_URL ?? DEFAULT_BASE_URL;

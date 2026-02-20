@@ -88,8 +88,7 @@ export class AgrologClient {
    * @throws {AgrologAPIError} If `connect()` has not been called
    */
   getTopology(): SiteTopology {
-    this.ensureConnected();
-    return this.topology!;
+    return this.connectedTopology();
   }
 
   /** Returns true if `connect()` has been successfully called. */
@@ -107,7 +106,7 @@ export class AgrologClient {
    * @param siloId - Asset ID of the silo (from topology.silos)
    */
   async getSiloTelemetry(siloId: string): Promise<SiloTelemetry> {
-    this.ensureConnected();
+    this.connectedTopology();
     return getSiloTelemetry(this.httpClient, siloId);
   }
 
@@ -119,7 +118,7 @@ export class AgrologClient {
    * @param sensorDeviceId - Device ID of the sensor line
    */
   async getSensorLineTelemetry(sensorDeviceId: string): Promise<SensorLineTelemetry> {
-    this.ensureConnected();
+    this.connectedTopology();
     return getSensorLineTelemetry(this.httpClient, sensorDeviceId);
   }
 
@@ -131,7 +130,7 @@ export class AgrologClient {
    * @throws {AgrologAPIError} If no headspace sensor is found in the silo
    */
   async getHeadspaceTelemetry(siloId: string): Promise<HeadspaceTelemetry> {
-    this.ensureConnected();
+    this.connectedTopology();
     return getHeadspaceTelemetry(this.httpClient, siloId);
   }
 
@@ -144,8 +143,8 @@ export class AgrologClient {
    * @throws {AgrologAPIError} If no weather station is found
    */
   async getWeatherTelemetry(wsAssetId?: string): Promise<WeatherTelemetry> {
-    this.ensureConnected();
-    const assetId = wsAssetId ?? this.topology!.weatherStation?.assetId;
+    const topology = this.connectedTopology();
+    const assetId = wsAssetId ?? topology.weatherStation?.assetId;
     if (!assetId) {
       throw new AgrologAPIError(
         'No weather station found in topology. Pass a weatherStationAssetId explicitly.',
@@ -161,7 +160,7 @@ export class AgrologClient {
    * @param aeratorAssetId - Asset ID of the aerator (from topology.aerators)
    */
   async getAerationState(aeratorAssetId: string): Promise<AerationState> {
-    this.ensureConnected();
+    this.connectedTopology();
     return getAerationState(this.httpClient, aeratorAssetId);
   }
 
@@ -172,7 +171,7 @@ export class AgrologClient {
    * @param limit - Maximum number of alarms to return (default: 10)
    */
   async getAlarms(entityId: string, limit?: number): Promise<Alarm[]> {
-    this.ensureConnected();
+    this.connectedTopology();
     return getAlarms(this.httpClient, entityId, limit);
   }
 
@@ -185,7 +184,7 @@ export class AgrologClient {
    * @param siloId - Asset ID of the silo
    */
   async getSiloDevices(siloId: string): Promise<SiloDevices> {
-    this.ensureConnected();
+    this.connectedTopology();
     return discoverSiloDevices(this.httpClient, siloId);
   }
 
@@ -197,9 +196,9 @@ export class AgrologClient {
    * @returns Map of siloAssetId → SiloTelemetry
    */
   async getAllSiloTelemetry(): Promise<Map<string, SiloTelemetry>> {
-    this.ensureConnected();
+    const topology = this.connectedTopology();
     const results = new Map<string, SiloTelemetry>();
-    const promises = this.topology!.silos.map(async silo => {
+    const promises = topology.silos.map(async silo => {
       const telemetry = await getSiloTelemetry(this.httpClient, silo.assetId);
       results.set(silo.assetId, telemetry);
     });
@@ -220,12 +219,14 @@ export class AgrologClient {
 
   // ─── Internal ────────────────────────────────────────────────
 
-  private ensureConnected(): void {
+  /** Asserts connected and returns the narrowed topology (no `!` needed). */
+  private connectedTopology(): SiteTopology {
     if (!this.topology) {
       throw new AgrologAPIError(
         'Client not connected. Call connect() before making data requests.',
         ERROR_CODES.NOT_CONNECTED,
       );
     }
+    return this.topology;
   }
 }

@@ -80,5 +80,44 @@ describe('AgrologHttpClient', () => {
       const unauthClient = new AgrologHttpClient(BASE_URL, 5000);
       await expect(unauthClient.request('GET', '/api/auth/user')).rejects.toThrow('Auth not configured');
     });
+
+    it('refreshes token on 401 and retries the request', async () => {
+      let tokenCallCount = 0;
+      const retryClient = new AgrologHttpClient(BASE_URL, 5000, false, 0);
+      retryClient.setAuth(
+        async () => {
+          tokenCallCount++;
+          return tokenCallCount === 1 ? 'stale-token' : 'fresh-token';
+        },
+        async () => { /* refresh is called, next getToken returns fresh-token */ },
+      );
+
+      // First request returns 401, second (after refresh) returns 200
+      nock(BASE_URL, { reqheaders: { 'X-Authorization': 'Bearer stale-token' } })
+        .get('/api/data')
+        .reply(401, { message: 'Token expired' });
+      nock(BASE_URL, { reqheaders: { 'X-Authorization': 'Bearer fresh-token' } })
+        .get('/api/data')
+        .reply(200, { result: 'ok' });
+
+      const result = await retryClient.request<{ result: string }>('GET', '/api/data');
+      expect(result).toEqual({ result: 'ok' });
+      expect(tokenCallCount).toBe(2);
+    });
+
+    it('does not retry auth refresh on second 401', async () => {
+      const retryClient = new AgrologHttpClient(BASE_URL, 5000, false, 0);
+      retryClient.setAuth(
+        async () => 'bad-token',
+        async () => { /* refresh doesn't help */ },
+      );
+
+      // All attempts return 401
+      nock(BASE_URL).get('/api/data').times(4).reply(401, { message: 'Unauthorized' });
+
+      await expect(
+        retryClient.request('GET', '/api/data'),
+      ).rejects.toThrow('Authentication failed');
+    });
   });
 });

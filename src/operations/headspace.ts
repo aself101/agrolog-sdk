@@ -3,7 +3,8 @@ import { API_PATHS, TELEMETRY_KEYS, ERROR_CODES } from '../config/constants.js';
 import { parseHeadspaceTelemetry } from '../parsers/telemetry.js';
 import { discoverSiloDevices } from '../discovery/discovery.js';
 import { AgrologAPIError } from '../errors.js';
-import type { RawTelemetry, HeadspaceTelemetry } from '../types.js';
+import type { RawTelemetry } from '../types-internal.js';
+import type { HeadspaceTelemetry } from '../types.js';
 
 export async function getHeadspaceTelemetry(
   client: AgrologHttpClient,

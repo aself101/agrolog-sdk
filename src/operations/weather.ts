@@ -2,7 +2,8 @@ import type { AgrologHttpClient } from '../http/http-client.js';
 import { API_PATHS, TELEMETRY_KEYS } from '../config/constants.js';
 import { parseWeatherTelemetry } from '../parsers/telemetry.js';
 import { discoverWeatherDevice } from '../discovery/discovery.js';
-import type { RawTelemetry, WeatherTelemetry } from '../types.js';
+import type { RawTelemetry } from '../types-internal.js';
+import type { WeatherTelemetry } from '../types.js';
 
 export async function getWeatherTelemetry(
   client: AgrologHttpClient,

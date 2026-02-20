@@ -1,7 +1,8 @@
 import type { AgrologHttpClient } from '../http/http-client.js';
 import { API_PATHS } from '../config/constants.js';
 import { parseAlarms } from '../parsers/telemetry.js';
-import type { RawAlarmResponse, Alarm } from '../types.js';
+import type { RawAlarmResponse } from '../types-internal.js';
+import type { Alarm } from '../types.js';
 
 const DEFAULT_ALARM_LIMIT = 10;
 

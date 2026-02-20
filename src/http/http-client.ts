@@ -1,7 +1,7 @@
 import axios, { type AxiosInstance, type AxiosRequestConfig, type Method } from 'axios';
 import { AgrologAPIError } from '../errors.js';
 import { BACKOFF_BASE_MS, ERROR_CODES, MAX_RETRIES } from '../config/constants.js';
-import type { RequestOptions } from '../types.js';
+import type { RequestOptions } from '../types-internal.js';
 
 export class AgrologHttpClient {
   private readonly client: AxiosInstance;
@@ -60,7 +60,7 @@ export class AgrologHttpClient {
       } catch (error) {
         lastError = this.transformError(error, endpoint);
 
-        // On 401, attempt one token refresh then retry
+        // Only refresh auth on the first attempt to prevent infinite refresh loops
         if (lastError.isAuthError() && attempt === 0 && this.tokenRefresher) {
           if (this.debug) {
             console.log('[agrolog-sdk] Auth error, refreshing token...');
@@ -71,7 +71,8 @@ export class AgrologHttpClient {
 
         // Retry on retryable errors
         if (lastError.isRetryable() && attempt < MAX_RETRIES) {
-          const delay = this.backoffBaseMs * Math.pow(2, attempt);
+          const baseDelay = this.backoffBaseMs * (2 ** attempt);
+          const delay = baseDelay > 0 ? baseDelay * (0.75 + Math.random() * 0.5) : 0;
           if (this.debug) {
             console.log(`[agrolog-sdk] Retrying in ${delay}ms...`);
           }
