@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="docs/agrolog.png" alt="Agrolog" width="400">
+</p>
+
 # agrolog-sdk
 
 > v1.0.0
