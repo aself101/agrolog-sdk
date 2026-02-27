@@ -10,6 +10,7 @@
   <a href="https://github.com/aself101/agrolog-sdk/blob/main/LICENSE"><img src="https://img.shields.io/npm/l/agrolog-sdk.svg" alt="license"></a>
   <a href="https://www.npmjs.com/package/agrolog-sdk"><img src="https://img.shields.io/node/v/agrolog-sdk.svg" alt="node version"></a>
   <a href="https://www.typescriptlang.org/"><img src="https://img.shields.io/badge/TypeScript-ESM--only-blue.svg" alt="TypeScript ESM-only"></a>
+  <img src="https://img.shields.io/badge/tests-108%20passing-brightgreen.svg" alt="tests">
 </p>
 
 TypeScript SDK for the Agrolog IoT ThingsBoard API. Provides typed, authenticated access to silo telemetry, sensor readings, weather stations, aeration systems, and alarms.
@@ -347,7 +348,7 @@ import { AgrologAPIError } from 'agrolog-sdk/errors';
 
 ## License
 
-MIT
+[MIT](LICENSE)
 
 ## Disclaimer
 
