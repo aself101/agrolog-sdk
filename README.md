@@ -14,6 +14,8 @@
 
 TypeScript SDK for the Agrolog IoT ThingsBoard API. Provides typed, authenticated access to silo telemetry, sensor readings, weather stations, aeration systems, and alarms.
 
+For official Agrolog platform documentation, see the [Agrolog Docs](https://sagroline.gitlab.io/agrolog_documentation/docs/en/getting-started.html).
+
 ## Installation
 
 ```bash
@@ -346,3 +348,7 @@ import { AgrologAPIError } from 'agrolog-sdk/errors';
 ## License
 
 MIT
+
+## Disclaimer
+
+This is an independent, community-maintained project and is **not affiliated with, endorsed by, or officially connected to Agrolog or SAGROline** in any way. All product names, logos, and brands are property of their respective owners.
