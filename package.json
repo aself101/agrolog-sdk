@@ -1,6 +1,6 @@
 {
   "name": "agrolog-sdk",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "TypeScript SDK for the Agrolog IoT ThingsBoard API - authentication, asset discovery, and telemetry fetching",
   "license": "MIT",
   "keywords": [
