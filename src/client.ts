@@ -33,7 +33,7 @@ import type {
  * const client = new AgrologClient({
  *   username: 'user@example.com',
  *   password: 'secret',
- *   baseUrl: 'http://console.agrolog.io:8080',
+ *   baseUrl: 'https://console.agrolog.io',
  * });
  *
  * const topology = await client.connect();

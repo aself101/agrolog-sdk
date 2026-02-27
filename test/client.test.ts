@@ -171,7 +171,7 @@ describe('AgrologClient', () => {
         .reply(500, { message: 'fail' });
 
       await expect(client.getAllSiloTelemetry()).rejects.toThrow();
-    }, 30_000);
+    });
 
     it('discoverSiloDevices returns devices', async () => {
       nock(BASE_URL).post('/api/devices').reply(200, makeSiloDevicesResponse());

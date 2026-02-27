@@ -31,6 +31,9 @@ export async function discoverTopology(client: AgrologHttpClient): Promise<SiteT
     ...buildContainsQuery('CUSTOMER', customerId),
   });
 
+  if (!Array.isArray(sites)) {
+    throw new AgrologAPIError('Unexpected response format from site discovery', ERROR_CODES.DISCOVERY_FAILED);
+  }
   const firstSite = sites?.[0];
   if (!firstSite) {
     throw new AgrologAPIError(
@@ -47,6 +50,9 @@ export async function discoverTopology(client: AgrologHttpClient): Promise<SiteT
     ...buildContainsQuery('ASSET', siteId),
   });
 
+  if (!Array.isArray(assets)) {
+    throw new AgrologAPIError('Unexpected response format from asset discovery', ERROR_CODES.DISCOVERY_FAILED);
+  }
   const silos = assets.filter(a => a.type === 'silo').map(mapAsset);
   const weatherStationRaw = assets.find(a => a.type === 'weather_station');
   const weatherStation = weatherStationRaw ? mapAsset(weatherStationRaw) : null;
@@ -63,6 +69,10 @@ export async function discoverSiloDevices(
     deviceTypes: DISCOVERY_DEVICE_TYPES.SILO,
     ...buildContainsQuery('ASSET', siloId),
   });
+
+  if (!Array.isArray(devices)) {
+    throw new AgrologAPIError('Unexpected response format from device discovery', ERROR_CODES.DISCOVERY_FAILED);
+  }
 
   return {
     siloId,
@@ -83,6 +93,9 @@ export async function discoverWeatherDevice(
     ...buildContainsQuery('ASSET', weatherStationAssetId),
   });
 
+  if (!Array.isArray(devices)) {
+    throw new AgrologAPIError('Unexpected response format from device discovery', ERROR_CODES.DISCOVERY_FAILED);
+  }
   const firstDevice = devices?.[0];
   if (!firstDevice) {
     throw new AgrologAPIError(

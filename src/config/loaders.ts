@@ -41,7 +41,7 @@ export function loadConfig(config?: AgrologConfig): ResolvedConfig {
       'DeprecationWarning',
     );
   }
-  const log = config?.logger ?? (config?.debug ? console.log : null);
+  const log = config?.logger ?? null;
 
   if (!username) {
     throw new AgrologAPIError(

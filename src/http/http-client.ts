@@ -62,7 +62,7 @@ export class AgrologHttpClient {
   }
 
   /** @typeParam T - Expected JSON response shape (cast, not validated at runtime) */
-  async request<T>(
+  async request<T extends object>(
     method: HttpMethod,
     endpoint: string,
     data?: unknown,
@@ -112,7 +112,7 @@ export class AgrologHttpClient {
   }
 
   /** @typeParam T - Expected JSON response shape (cast, not validated at runtime) */
-  async requestNoAuth<T>(
+  async requestNoAuth<T extends object>(
     method: HttpMethod,
     endpoint: string,
     data?: unknown,
@@ -124,7 +124,7 @@ export class AgrologHttpClient {
     }
   }
 
-  private async doFetch<T>(
+  private async doFetch<T extends object>(
     method: HttpMethod,
     endpoint: string,
     data?: unknown,
@@ -164,7 +164,8 @@ export class AgrologHttpClient {
           const errorBody = await response.json() as Record<string, unknown>;
           errorMessage = typeof errorBody.message === 'string' ? errorBody.message : undefined;
         } catch {
-          // Body wasn't JSON — fall through to statusText
+          // AUDIT-OK: Intentional — body wasn't JSON, fall through to statusText.
+          // The error IS thrown on the next line regardless of this catch outcome.
         }
         throw new FetchHttpError(errorMessage ?? response.statusText, response.status, endpoint);
       }

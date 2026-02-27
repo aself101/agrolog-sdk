@@ -10,7 +10,7 @@ TypeScript SDK for the Agrolog IoT ThingsBoard API. Provides typed, authenticate
 npm install agrolog-sdk
 ```
 
-Requires Node.js >= 18.
+Requires Node.js >= 18. This package is **ESM-only** — use `import`, not `require()`.
 
 ## Quick Start
 
@@ -69,7 +69,7 @@ const client = new AgrologClient();
 | `password` | `string` | env `AGROLOG_PASSWORD` | ThingsBoard password |
 | `baseUrl` | `string` | `https://console.agrolog.io` | ThingsBoard base URL |
 | `timeout` | `number` | `30000` | HTTP timeout (ms) |
-| `logger` | `(msg: string) => void` | — | Debug log callback. Log messages include request paths and retry info but never credentials or tokens. |
+| `logger` | `(message: string) => void` | — | Debug log callback. Log messages include request paths and retry info but never credentials or tokens. |
 | `debug` | `boolean` | — | **Deprecated.** When `true` and no `logger` set, uses `console.log`. Use `logger: (msg) => console.log(msg)` instead. |
 
 **.env file example:**

@@ -4,7 +4,7 @@
 export interface AgrologConfig {
   readonly username?: string;
   readonly password?: string;
-  /** ThingsBoard base URL (e.g. `http://console.agrolog.io:8080`). */
+  /** ThingsBoard base URL (e.g. `https://console.agrolog.io`). */
   readonly baseUrl?: string;
   /** HTTP request timeout in milliseconds. Default: 30000. */
   readonly timeout?: number;
@@ -74,6 +74,7 @@ export interface SiteTopology {
 export interface SiloDevice {
   /** ThingsBoard device UUID. */
   readonly deviceId: string;
+  /** Human-readable device name. */
   readonly name: string;
   /** Device type (e.g. `temperature_sensor_lines`, `head_space_sensor`, `level_indicator`). */
   readonly type: string;
@@ -83,6 +84,7 @@ export interface SiloDevice {
 export interface SiloDevices {
   /** The silo asset ID these devices belong to. */
   readonly siloId: string;
+  /** All devices discovered within this silo. */
   readonly devices: readonly SiloDevice[];
 }
 
@@ -90,19 +92,29 @@ export interface SiloDevices {
 
 /** Aggregate silo telemetry — min/avg/max for temperature and moisture, each with deltas. All temperatures in °C. */
 export interface SiloTelemetry {
+  /** Minimum temperature across all sensors (°C). */
   readonly minTemperature: TimestampedValue<number>;
+  /** Average temperature across all sensors (°C). */
   readonly avgTemperature: TimestampedValue<number>;
+  /** Maximum temperature across all sensors (°C). */
   readonly maxTemperature: TimestampedValue<number>;
-  /** Minimum temperature change since last reading. */
+  /** Minimum temperature change since last reading (°C). */
   readonly minDeltaTemperature: TimestampedValue<number>;
+  /** Average temperature change since last reading (°C). */
   readonly avgDeltaTemperature: TimestampedValue<number>;
+  /** Maximum temperature change since last reading (°C). */
   readonly maxDeltaTemperature: TimestampedValue<number>;
   /** Minimum moisture across all sensors (%). */
   readonly minMoisture: TimestampedValue<number>;
+  /** Average moisture across all sensors (%). */
   readonly avgMoisture: TimestampedValue<number>;
+  /** Maximum moisture across all sensors (%). */
   readonly maxMoisture: TimestampedValue<number>;
+  /** Minimum moisture change since last reading (%). */
   readonly minDeltaMoisture: TimestampedValue<number>;
+  /** Average moisture change since last reading (%). */
   readonly avgDeltaMoisture: TimestampedValue<number>;
+  /** Maximum moisture change since last reading (%). */
   readonly maxDeltaMoisture: TimestampedValue<number>;
 }
 
@@ -158,7 +170,11 @@ export interface AerationState {
 export interface BulkTelemetryResult {
   /** Successfully fetched telemetry, keyed by silo asset ID. */
   readonly results: ReadonlyMap<string, SiloTelemetry>;
-  /** Errors for silos that failed, keyed by silo asset ID. */
+  /**
+   * Errors for silos that failed, keyed by silo asset ID.
+   * A non-empty map does not mean the call failed — successful results are still
+   * present in `results`. The method throws only if every silo fails.
+   */
   readonly errors: ReadonlyMap<string, Error>;
 }
 

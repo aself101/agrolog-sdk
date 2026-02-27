@@ -9,7 +9,7 @@ export const TEST_BASE_URL = 'http://localhost:8080';
 
 /** Creates an AgrologHttpClient wired with a no-op mock auth for unit tests. */
 export function createTestHttpClient(): AgrologHttpClient {
-  const client = new AgrologHttpClient(TEST_BASE_URL, 5000);
+  const client = new AgrologHttpClient(TEST_BASE_URL, 5000, null, 0);
   client.setAuth(async () => 'mock-token', async () => { /* no-op */ });
   return client;
 }
