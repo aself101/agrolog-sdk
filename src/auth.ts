@@ -14,11 +14,13 @@ export class TokenManager {
   private readonly username: string;
   private readonly password: string;
 
+  /** Creates a new token manager bound to the given credentials. */
   constructor(username: string, password: string) {
     this.username = username;
     this.password = password;
   }
 
+  /** Returns a valid token, refreshing automatically if expiry is approaching. */
   async getValidToken(httpClient: AgrologHttpClient): Promise<string> {
     if (this.token && !this.isExpiringSoon()) {
       return this.token;
@@ -26,6 +28,7 @@ export class TokenManager {
     return this.refreshToken(httpClient);
   }
 
+  /** Forces a token refresh regardless of current token state. Deduplicates concurrent calls. */
   async refreshToken(httpClient: AgrologHttpClient): Promise<string> {
     // Deduplicate concurrent refresh calls
     if (this.refreshPromise) {
@@ -42,6 +45,7 @@ export class TokenManager {
     }
   }
 
+  /** Clears the cached token, forcing re-authentication on the next request. */
   clearToken(): void {
     this.token = null;
     this.tokenAcquiredAt = 0;

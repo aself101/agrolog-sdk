@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll, afterAll, afterEach } from 'vitest';
+import { describe, it, expect, beforeAll } from 'vitest';
 import nock from 'nock';
 import { AgrologHttpClient } from '../src/http/http-client.js';
 import { AgrologAPIError } from '../src/errors.js';
@@ -7,18 +7,6 @@ const BASE_URL = 'http://localhost:8080';
 
 describe('AgrologHttpClient', () => {
   let client: AgrologHttpClient;
-
-  beforeAll(() => {
-    nock.disableNetConnect();
-  });
-
-  afterAll(() => {
-    nock.enableNetConnect();
-  });
-
-  afterEach(() => {
-    nock.cleanAll();
-  });
 
   describe('requestNoAuth', () => {
     beforeAll(() => {

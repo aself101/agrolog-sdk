@@ -1,1 +1,12 @@
 **/CLAUDE.md
+src/
+test/
+coverage/
+.github/
+.claude/
+*.test.ts
+*.spec.ts
+tsconfig.json
+eslint.config.js
+vitest.config.ts
+.env*

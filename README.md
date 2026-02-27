@@ -70,7 +70,7 @@ const client = new AgrologClient();
 | `baseUrl` | `string` | `https://console.agrolog.io` | ThingsBoard base URL |
 | `timeout` | `number` | `30000` | HTTP timeout (ms) |
 | `logger` | `(message: string) => void` | — | Debug log callback. Log messages include request paths and retry info but never credentials or tokens. |
-| `debug` | `boolean` | — | **Deprecated.** When `true` and no `logger` set, uses `console.log`. Use `logger: (msg) => console.log(msg)` instead. |
+| `debug` | `boolean` | — | **Deprecated — will be removed in v2.0.0.** When `true` and no `logger` set, uses `console.log`. Use `logger: (msg) => console.log(msg)` instead. |
 
 **.env file example:**
 

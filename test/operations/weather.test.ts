@@ -1,14 +1,10 @@
-import { describe, it, expect, beforeAll, afterAll, afterEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import nock from 'nock';
 import { getWeatherTelemetry } from '../../src/operations/weather.js';
 import { makeWeatherDevicesResponse, makeWeatherTelemetry, createTestHttpClient, TEST_BASE_URL } from '../test-setup.js';
 
 describe('getWeatherTelemetry', () => {
   const client = createTestHttpClient();
-
-  beforeAll(() => nock.disableNetConnect());
-  afterAll(() => nock.enableNetConnect());
-  afterEach(() => nock.cleanAll());
 
   it('throws AgrologAPIError when weather device discovery fails', async () => {
     nock(TEST_BASE_URL).post('/api/devices').reply(200, []);

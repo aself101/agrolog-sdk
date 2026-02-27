@@ -165,4 +165,27 @@ describe('parseAlarms', () => {
   it('returns empty array for empty data', () => {
     expect(parseAlarms({ data: [], totalPages: 0, totalElements: 0, hasNext: false })).toEqual([]);
   });
+
+  it('applies nullish coalescing fallbacks for alarm with missing optional fields', () => {
+    // Alarm with only id — all other fields missing
+    const sparse = {
+      data: [{ id: { id: 'alarm-sparse', entityType: 'ALARM' } }],
+      totalPages: 1,
+      totalElements: 1,
+      hasNext: false,
+    };
+    const result = parseAlarms(sparse as never);
+
+    expect(result).toHaveLength(1);
+    expect(result[0].alarmId).toBe('alarm-sparse');
+    expect(result[0].name).toBe('');
+    expect(result[0].type).toBe('');
+    expect(result[0].severity).toBe('');
+    expect(result[0].status).toBe('');
+    expect(result[0].createdTime).toBe(0);
+    expect(result[0].startTs).toBe(0);
+    expect(result[0].endTs).toBe(0);
+    expect(result[0].originatorId).toBe('');
+    expect(result[0].details).toEqual({});
+  });
 });

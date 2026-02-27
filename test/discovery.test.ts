@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll, afterAll, afterEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import nock from 'nock';
 import { discoverTopology, discoverSiloDevices, discoverWeatherDevice } from '../src/discovery/discovery.js';
 import { AgrologAPIError } from '../src/errors.js';
@@ -6,10 +6,6 @@ import { makeRawAssets, makeSiloDevicesResponse, makeWeatherDevicesResponse, cre
 
 describe('discovery', () => {
   const client = createTestHttpClient();
-
-  beforeAll(() => nock.disableNetConnect());
-  afterAll(() => nock.enableNetConnect());
-  afterEach(() => nock.cleanAll());
 
   describe('discoverTopology', () => {
     it('discovers customer, site, and all assets', async () => {

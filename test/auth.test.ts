@@ -142,6 +142,28 @@ describe('TokenManager', () => {
     }
   });
 
+  it('refreshes token at full TTL expiry (well past refresh boundary)', async () => {
+    vi.useFakeTimers();
+    try {
+      const client = createMockHttpClient('original-token');
+      await manager.getValidToken(client);
+
+      // Advance past full TTL — token is fully expired, not just approaching expiry
+      vi.advanceTimersByTime(TOKEN_TTL_MS);
+
+      (client.requestNoAuth as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+        token: 'expired-refresh-token',
+        refreshToken: 'refresh-2',
+      });
+
+      const token = await manager.getValidToken(client);
+      expect(token).toBe('expired-refresh-token');
+      expect(client.requestNoAuth).toHaveBeenCalledTimes(2);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it('refreshes token exactly at the refresh boundary', async () => {
     vi.useFakeTimers();
     try {

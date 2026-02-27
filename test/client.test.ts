@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll, afterAll, afterEach } from 'vitest';
+import { describe, it, expect, beforeAll } from 'vitest';
 import nock from 'nock';
 import { AgrologClient } from '../src/client.js';
 import { AgrologAPIError } from '../src/errors.js';
@@ -32,9 +32,6 @@ function setupConnectMocks() {
 }
 
 describe('AgrologClient', () => {
-  beforeAll(() => nock.disableNetConnect());
-  afterAll(() => nock.enableNetConnect());
-  afterEach(() => nock.cleanAll());
 
   it('throws AgrologAPIError if no username provided', () => {
     expect(() => new AgrologClient({ username: '', password: '' })).toThrow('username is required');
@@ -119,6 +116,10 @@ describe('AgrologClient', () => {
       expect(topology.customerId).toBe('cust-1');
       expect(topology.silos).toHaveLength(2);
       expect(topology.weatherStation?.name).toBe('Weather Station');
+    });
+
+    it('getSiloTelemetry rejects invalid siloId characters', async () => {
+      await expect(client.getSiloTelemetry('../etc/passwd')).rejects.toThrow('Invalid entity ID format');
     });
 
     it('getSiloTelemetry fetches telemetry', async () => {
@@ -256,6 +257,12 @@ describe('AgrologClient', () => {
     });
 
     it('uses refreshed token on subsequent requests', async () => {
+      // Explicitly refresh first — do not rely on prior test's side effects
+      nock(BASE_URL)
+        .post('/api/auth/login')
+        .reply(200, { token: 'new-jwt-token', refreshToken: 'new-r' });
+      await freshClient.refreshAuth();
+
       nock(BASE_URL, { reqheaders: { 'X-Authorization': 'Bearer new-jwt-token' } })
         .get(/\/api\/plugins\/telemetry\/ASSET\/silo-1\/values\/timeseries/)
         .reply(200, makeSiloTelemetry());

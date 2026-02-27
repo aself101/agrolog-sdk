@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll, afterAll, afterEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import nock from 'nock';
 import { getAlarms } from '../../src/operations/alarms.js';
 import { AgrologAPIError } from '../../src/errors.js';
@@ -6,10 +6,6 @@ import { makeAlarmResponse, createTestHttpClient, TEST_BASE_URL } from '../test-
 
 describe('getAlarms', () => {
   const client = createTestHttpClient();
-
-  beforeAll(() => nock.disableNetConnect());
-  afterAll(() => nock.enableNetConnect());
-  afterEach(() => nock.cleanAll());
 
   it('fetches alarms with default limit of 10', async () => {
     nock(TEST_BASE_URL)

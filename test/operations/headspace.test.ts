@@ -1,14 +1,10 @@
-import { describe, it, expect, beforeAll, afterAll, afterEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import nock from 'nock';
 import { getHeadspaceTelemetry } from '../../src/operations/headspace.js';
 import { makeSiloDevicesResponse, makeHeadspaceTelemetry, createTestHttpClient, TEST_BASE_URL } from '../test-setup.js';
 
 describe('getHeadspaceTelemetry', () => {
   const client = createTestHttpClient();
-
-  beforeAll(() => nock.disableNetConnect());
-  afterAll(() => nock.enableNetConnect());
-  afterEach(() => nock.cleanAll());
 
   it('discovers headspace device then fetches telemetry', async () => {
     // First call: discover silo devices

@@ -21,6 +21,7 @@ export default defineConfig({
         statements: 80
       }
     },
+    setupFiles: ['test/setup-nock.ts'],
     globals: false,
     reporter: 'verbose',
     testTimeout: 10000,

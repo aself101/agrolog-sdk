@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll, afterAll, afterEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import nock from 'nock';
 import { getSiloTelemetry } from '../../src/operations/silo.js';
 import { AgrologAPIError } from '../../src/errors.js';
@@ -6,10 +6,6 @@ import { makeSiloTelemetry, createTestHttpClient, TEST_BASE_URL } from '../test-
 
 describe('getSiloTelemetry', () => {
   const client = createTestHttpClient();
-
-  beforeAll(() => nock.disableNetConnect());
-  afterAll(() => nock.enableNetConnect());
-  afterEach(() => nock.cleanAll());
 
   it('fetches and parses silo telemetry', async () => {
     nock(TEST_BASE_URL)

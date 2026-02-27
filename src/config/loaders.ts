@@ -40,7 +40,7 @@ export function loadConfig(config?: AgrologConfig): ResolvedConfig {
 
   if (config?.debug && !config?.logger) {
     process.emitWarning(
-      '`debug: true` is deprecated. Use `logger: (msg) => console.log(msg)` instead.',
+      '`debug: true` is deprecated and will be removed in v2.0.0. Use `logger: (msg) => console.log(msg)` instead.',
       'DeprecationWarning',
     );
   }
