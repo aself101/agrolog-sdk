@@ -33,6 +33,9 @@ class FetchNetworkError extends Error {
 
 // ─── HTTP Client ────────────────────────────────────────────────
 
+/** Minimum interval between auth refresh attempts (5 seconds). */
+const AUTH_REFRESH_COOLDOWN_MS = 5_000;
+
 export class AgrologHttpClient {
   private readonly baseUrl: string;
   private readonly timeout: number;
@@ -41,6 +44,7 @@ export class AgrologHttpClient {
   private readonly backoffBaseMs: number;
   private tokenGetter: (() => Promise<string>) | null = null;
   private tokenRefresher: (() => Promise<void>) | null = null;
+  private lastAuthRefreshAt = 0;
 
   constructor(baseUrl: string, timeout: number, log: ((message: string) => void) | null = null, backoffBaseMs = BACKOFF_BASE_MS) {
     this.baseUrl = baseUrl;
@@ -88,8 +92,15 @@ export class AgrologHttpClient {
       } catch (error) {
         lastError = this.transformError(error, endpoint);
 
-        // Only refresh auth on the first attempt to prevent infinite refresh loops
+        // Only refresh auth on the first attempt to prevent infinite refresh loops.
+        // Cooldown prevents parallel requests from hammering the auth endpoint.
         if (lastError.isAuthError() && attempt === 0 && this.tokenRefresher) {
+          const now = Date.now();
+          if (now - this.lastAuthRefreshAt < AUTH_REFRESH_COOLDOWN_MS) {
+            this.log?.('[agrolog-sdk] Auth refresh skipped (cooldown active)');
+            break;
+          }
+          this.lastAuthRefreshAt = now;
           this.log?.('[agrolog-sdk] Auth error, refreshing token...');
           await this.tokenRefresher();
           continue;

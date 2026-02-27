@@ -5,6 +5,9 @@ import { DEFAULT_BASE_URL, DEFAULT_TIMEOUT, ERROR_CODES } from './constants.js';
 
 // Load .env once per process to avoid repeated disk reads.
 // dotenv.config() does not override existing env vars, so this is safe to call once.
+// NOTE: Module-level flag — tests that need to re-trigger dotenv loading cannot reset
+// this without re-importing the module. This is intentional; in production the flag
+// prevents redundant filesystem reads across multiple loadConfig() calls.
 let dotenvLoaded = false;
 
 /** @internal Not part of the public API — use `AgrologConfig` instead. */

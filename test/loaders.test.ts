@@ -45,4 +45,65 @@ describe('loadConfig', () => {
     expect(() => loadConfig({ username: 'u' } as never)).toThrow(AgrologAPIError);
     expect(() => loadConfig({ username: 'u' } as never)).toThrow('password is required');
   });
+
+  it('emits DeprecationWarning when debug:true is used without logger', async () => {
+    const warnings: Error[] = [];
+    const handler = (w: Error) => { warnings.push(w); };
+    process.on('warning', handler);
+
+    try {
+      loadConfig({ username: 'u', password: 'p', debug: true } as never);
+      // Flush event loop to let async warnings arrive
+      await new Promise(resolve => setTimeout(resolve, 50));
+      expect(warnings.some(w => w.message.includes('debug: true'))).toBe(true);
+    } finally {
+      process.removeListener('warning', handler);
+    }
+  });
+
+  it('does not emit DeprecationWarning when logger is provided alongside debug', async () => {
+    const warnings: string[] = [];
+    const handler = (warning: Error) => { warnings.push(warning.message); };
+    process.on('warning', handler);
+
+    try {
+      const config = loadConfig({ username: 'u', password: 'p', debug: true, logger: () => {} });
+      expect(config.log).toBeTypeOf('function');
+      // Flush event loop to ensure any pending warnings are delivered
+      await new Promise(resolve => setTimeout(resolve, 50));
+      expect(warnings.some(w => w.includes('debug: true'))).toBe(false);
+    } finally {
+      process.removeListener('warning', handler);
+    }
+  });
+
+  it('emits AgrologSecurityWarning for non-localhost HTTP URL', async () => {
+    const warnings: Error[] = [];
+    const handler = (w: Error) => { warnings.push(w); };
+    process.on('warning', handler);
+
+    try {
+      loadConfig({ username: 'u', password: 'p', baseUrl: 'http://insecure.example.com' });
+      // Flush event loop to let async warnings arrive
+      await new Promise(resolve => setTimeout(resolve, 50));
+      expect(warnings.some(w => w.message.includes('plaintext'))).toBe(true);
+    } finally {
+      process.removeListener('warning', handler);
+    }
+  });
+
+  it('does not emit security warning for localhost HTTP URL', async () => {
+    const warnings: string[] = [];
+    const handler = (warning: Error) => { warnings.push(warning.message); };
+    process.on('warning', handler);
+
+    try {
+      loadConfig({ username: 'u', password: 'p', baseUrl: 'http://localhost:8080' });
+      // Flush event loop to ensure any pending warnings are delivered
+      await new Promise(resolve => setTimeout(resolve, 50));
+      expect(warnings.some(w => w.includes('plaintext'))).toBe(false);
+    } finally {
+      process.removeListener('warning', handler);
+    }
+  });
 });

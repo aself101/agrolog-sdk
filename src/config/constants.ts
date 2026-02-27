@@ -3,6 +3,7 @@
 import { AgrologAPIError } from '../errors.js';
 
 const SAFE_ID_PATTERN = /^[a-zA-Z0-9_-]+$/;
+const SAFE_KEYS_PATTERN = /^[a-zA-Z0-9_,-]+$/;
 
 /** Validates that an entity ID is safe for URL path interpolation. */
 export function validateId(id: string): string {
@@ -15,6 +16,17 @@ export function validateId(id: string): string {
   return id;
 }
 
+/** Validates that telemetry key strings are safe for URL query interpolation. */
+function validateKeys(keys: string): string {
+  if (!SAFE_KEYS_PATTERN.test(keys)) {
+    throw new AgrologAPIError(
+      `Invalid telemetry keys format: "${keys}". Expected comma-separated alphanumeric keys.`,
+      'REQUEST_FAILED',
+    );
+  }
+  return keys;
+}
+
 // ─── API Path Templates ──────────────────────────────────────────
 
 export const API_PATHS = {
@@ -24,9 +36,9 @@ export const API_PATHS = {
   ASSETS: '/api/assets',
   DEVICES: '/api/devices',
   ASSET_TELEMETRY: (assetId: string, keys: string) =>
-    `/api/plugins/telemetry/ASSET/${validateId(assetId)}/values/timeseries?keys=${keys}`,
+    `/api/plugins/telemetry/ASSET/${validateId(assetId)}/values/timeseries?keys=${validateKeys(keys)}`,
   DEVICE_TELEMETRY: (deviceId: string, keys: string) =>
-    `/api/plugins/telemetry/DEVICE/${validateId(deviceId)}/values/timeseries?keys=${keys}`,
+    `/api/plugins/telemetry/DEVICE/${validateId(deviceId)}/values/timeseries?keys=${validateKeys(keys)}`,
   ALARMS: (entityId: string, limit: number) =>
     `/api/alarm/ASSET/${validateId(entityId)}?searchStatus=ACTIVE&limit=${limit}`,
 } as const;

@@ -117,13 +117,13 @@ export function parseAlarms(raw: RawAlarmResponse): Alarm[] {
 
   return raw.data.map(alarm => ({
     alarmId: alarm.id?.id ?? '',
-    name: alarm.name,
-    type: alarm.type,
-    severity: alarm.severity,
-    status: alarm.status,
-    createdTime: alarm.createdTime,
-    startTs: alarm.startTs,
-    endTs: alarm.endTs,
+    name: alarm.name ?? '',
+    type: alarm.type ?? '',
+    severity: alarm.severity ?? '',
+    status: alarm.status ?? '',
+    createdTime: alarm.createdTime ?? 0,
+    startTs: alarm.startTs ?? 0,
+    endTs: alarm.endTs ?? 0,
     originatorId: alarm.originator?.id ?? '',
     details: alarm.details ?? {},
   }));
