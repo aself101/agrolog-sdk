@@ -1,10 +1,16 @@
 <p align="center">
-  <img src="docs/agrolog.png" alt="Agrolog" width="400">
+  <img src="agrolog.png" alt="Agrolog" width="400">
 </p>
 
 # agrolog-sdk
 
-> v1.0.0
+<p align="center">
+  <a href="https://www.npmjs.com/package/agrolog-sdk"><img src="https://img.shields.io/npm/v/agrolog-sdk.svg" alt="npm version"></a>
+  <a href="https://www.npmjs.com/package/agrolog-sdk"><img src="https://img.shields.io/npm/dm/agrolog-sdk.svg" alt="npm downloads"></a>
+  <a href="https://github.com/aself101/agrolog-sdk/blob/main/LICENSE"><img src="https://img.shields.io/npm/l/agrolog-sdk.svg" alt="license"></a>
+  <a href="https://www.npmjs.com/package/agrolog-sdk"><img src="https://img.shields.io/node/v/agrolog-sdk.svg" alt="node version"></a>
+  <a href="https://www.typescriptlang.org/"><img src="https://img.shields.io/badge/TypeScript-ESM--only-blue.svg" alt="TypeScript ESM-only"></a>
+</p>
 
 TypeScript SDK for the Agrolog IoT ThingsBoard API. Provides typed, authenticated access to silo telemetry, sensor readings, weather stations, aeration systems, and alarms.
 
